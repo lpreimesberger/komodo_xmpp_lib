@@ -15,31 +15,7 @@ class KomodoXmppLib {
     return version;
   }
 
-  /*
-  static Future<bool> get isConnected async {
-    return await _channel.invokeMethod('isConnected');
-  }
 
-  static Future<String> login( {@required String username, @required String password}) async {
-    assert(password != null);
-    assert(username != null);
-    final Map<String, dynamic> params = <String, dynamic> {
-      'user_jid': username,
-      'host': 'sg01.komodochat.app',
-      'password': password,
-    };
-    return await _channel.invokeMethod('login', params);
-  }
-
-  static Future<int> startChat( {@required String username}) async {
-    assert(username != null);
-    final Map<String, dynamic> params = <String, dynamic> {
-      'userName': username
-
-    };
-    return await _channel.invokeMethod('startChat', params);
-  }
-*/
   KomodoXmppLib(dynamic params){
     this.auth = params;
   }
@@ -93,8 +69,4 @@ class KomodoXmppLib {
   Future<void> stop() async {
     streamGetMsg.cancel();
   }
-
-
-
-
 }

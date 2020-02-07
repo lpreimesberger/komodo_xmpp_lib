@@ -42,7 +42,7 @@ class _MyAppState extends State<MyApp> {
     sleep(const Duration(seconds:2)); // just sample wait for get current state
     print(await session.currentState()); // get current state
     // sending Message
-    await session.sendMessage("1@0.0.0.0","test","random_id_for_sync_with_sqlite");
+    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
     // read Message
     await session.readMessage("1@0.0.0.0","random_id_for_sync_with_sqlite");
     // life cycle, if app not active, kill stream get incoming message ..

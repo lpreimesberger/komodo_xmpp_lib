@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
@@ -30,21 +29,21 @@ import java.util.Date;
 public class KomodoConnection implements ConnectionListener {
     private static final String TAG ="flutter_xmpp";
     private Context mApplicationContext;
-    private String mUsername;
-    private String mPassword;
-    private String mServiceName;
-    private String mResource;
-    private String mHost;
-    private Integer mPort;
+    private String username;
+    private String password;
+    private String serviceName;
+    private String resource;
+    private String host;
+    private Integer post;
     private XMPPTCPConnection mConnection;
-    private BroadcastReceiver uiThreadMessageReceiver;//Receives messages from the ui thread.
+    private BroadcastReceiver uiThreadMessageReceiver;
 
 
-    public static enum ConnectionState{
+    public enum ConnectionState{
         CONNECTED ,AUTHENTICATED, CONNECTING ,DISCONNECTING ,DISCONNECTED;
     }
 
-    public static enum LoggedInState{
+    public  enum LoggedInState{
         LOGGED_IN , LOGGED_OUT;
     }
 
@@ -54,24 +53,24 @@ public class KomodoConnection implements ConnectionListener {
         }
         mApplicationContext = context.getApplicationContext();
         String jid = jid_user;
-        mPassword = password;
-        mPort = port;
-        mHost = host;
+        this.password = password;
+        post = port;
+        this.host = host;
         if(jid != null) {
             String[] jid_list = jid.split("@");
-            mUsername = jid_list[0];
+            username = jid_list[0];
             if(jid_list[1].contains("/")) {
                 String[] domain_resource = jid_list[1].split("/");
-                mServiceName = domain_resource[0];
-                mResource = domain_resource[1];
+                serviceName = domain_resource[0];
+                resource = domain_resource[1];
             }else{
-                mServiceName = jid_list[1];
-                mResource  = "Android";
+                serviceName = jid_list[1];
+                resource = "Android";
             }
         }else{
-            mUsername ="";
-            mServiceName="";
-            mResource = "";
+            username ="";
+            serviceName ="";
+            resource = "";
         }
     }
 
@@ -108,30 +107,30 @@ public class KomodoConnection implements ConnectionListener {
     {
         XMPPTCPConnectionConfiguration.Builder conf = XMPPTCPConnectionConfiguration.builder();
 
-        conf.setXmppDomain(mServiceName);
-        if(validIP(mHost)) {
-            InetAddress addr = InetAddress.getByName(mHost);
+        conf.setXmppDomain(serviceName);
+        if(validIP(host)) {
+            InetAddress addr = InetAddress.getByName(host);
             conf.setHostAddress(addr);
         }else{
-            conf.setHost(mHost);
+            conf.setHost(host);
         }
-        if(mPort != 0) {
-            conf.setPort(mPort);
+        if(post != 0) {
+            conf.setPort(post);
         }
 //        conf.setPort(0);
 
-        conf.setUsernameAndPassword(mUsername, mPassword);
-        conf.setResource(mResource);
+        conf.setUsernameAndPassword(username, password);
+        conf.setResource(resource);
         conf.setKeystoreType(null);
         conf.setDebuggerEnabled(true);
 //        conf.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
         conf.setCompressionEnabled(true);
 
         if(KomodoXmppLibPlugin.DEBUG) {
-            Log.d(TAG, "Username : " + mUsername);
-            Log.d(TAG, "Password : " + mPassword);
-            Log.d(TAG, "Server : " + mServiceName);
-            Log.d(TAG, "Port : " + mPort.toString());
+            Log.d(TAG, "Username : " + username);
+            Log.d(TAG, "Password : " + password);
+            Log.d(TAG, "Server : " + serviceName);
+            Log.d(TAG, "Port : " + post.toString());
 
         }
 
@@ -145,7 +144,7 @@ public class KomodoConnection implements ConnectionListener {
                 Log.d(TAG, "Calling connect() ");
             }
             mConnection.connect();
-            mConnection.login(mUsername,mPassword);
+            mConnection.login(username, password);
             if(KomodoXmppLibPlugin.DEBUG) {
                 Log.d(TAG, " login() Called ");
             }
@@ -388,7 +387,7 @@ public class KomodoConnection implements ConnectionListener {
 
     public void disconnect() {
         if(KomodoXmppLibPlugin.DEBUG) {
-            Log.d(TAG, "Disconnecting from serser " + mServiceName);
+            Log.d(TAG, "Disconnecting from serser " + serviceName);
         }
         if (mConnection != null){
             mConnection.disconnect();
