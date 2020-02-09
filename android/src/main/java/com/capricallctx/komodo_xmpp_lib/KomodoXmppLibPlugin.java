@@ -8,6 +8,7 @@ import android.util.Log;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterListener;
+import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.jxmpp.jid.Jid;
 import java.util.Collection;
 import io.flutter.app.FlutterActivity;
@@ -29,6 +30,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
   private String password = "";
   private String host = "";
   private Integer port = 0;
+  public String myVcard = "";
   private BroadcastReceiver mBroadcastReceiver = null;
 
 
@@ -48,6 +50,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       @Override
       public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        if( action == null ){ return; }
         switch (action) {
           case KomodoXmppLibPluginService.RECEIVE_MESSAGE:
             String from = intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID);
@@ -142,11 +145,33 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-
-    // send_message
+    Log.d(TAG, "METHOD CALL ------------------" + call.method );
     switch (call.method) {
+      case "my_vcard":
+        Log.d(TAG, "Fetching vcard...");
+        get_my_vard();
+        result.success("SUCCESS");
+        break;
+      case "get_user_vcard":
+        Log.d(TAG, "Fetching user vcard...");
+        if( ! call.hasArgument("user")){
+          result.error("MISSING", "Missing user.", null);
+          return;
+        }
+        String user = call.argument("user").toString();
+        get_user_vard(user);
+        result.success("SUCCESS");
+        break;
+      case "set_user_vcard":
+        Log.d(TAG, "Updating user vcard...");
+        if (!call.hasArgument("data") ) {
+          result.error("MISSING", "Missing data segment.", null);
+        }
+        String data = call.argument("data").toString();
+        update_my_vard(data);
+        result.success("SUCCESS");
+        break;
       case "login":
-
         if (!call.hasArgument("user_jid") || !call.hasArgument("password") || !call.hasArgument("host")) {
           result.error("MISSING", "Missing auth.", null);
         }
@@ -162,11 +187,9 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
 
         break;
       case "logout":
-
+        Log.d(TAG, "LOGGING OUT-------------------------------");
         logout();
-
         result.success("SUCCESS");
-
         break;
       case "send_message": {
         if (!call.hasArgument("to_jid") || !call.hasArgument("body") || !call.hasArgument("id")) {
@@ -239,6 +262,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     }
   }
 
+
   private void login() {
     if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.DISCONNECTED)) {
       Intent i = new Intent(activity, KomodoXmppLibPluginService.class);
@@ -261,7 +285,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     Log.d(TAG, "Current Status : " + KomodoXmppLibPluginService.getState().toString());
     if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
       if (DEBUG) {
-        Log.d(TAG, "ngirim pesan ke : " + jid_user);
+        Log.d(TAG, "group_send : " + jid_user);
       }
       Intent intent = new Intent(KomodoXmppLibPluginService.GROUP_SEND_MESSAGE);
       intent.putExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_BODY, msg);
@@ -271,7 +295,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       activity.sendBroadcast(intent);
     } else {
       if (DEBUG) {
-        Log.d(TAG, "Tidak terhubung ke server");
+        Log.d(TAG, "group_send_complete");
       }
     }
   }
@@ -296,6 +320,53 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     }
   }
 
+  private void get_my_vard() {
+    if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+      if (DEBUG) {
+        Log.d(TAG, "get_my_vcard -> " + jid_user);
+      }
+      Intent intent = new Intent(KomodoXmppLibPluginService.GET_MY_VCARD);
+      intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY, "");
+      intent.putExtra(KomodoXmppLibPluginService.BUNDLE_TO, "");
+      intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS, "");
+      activity.sendBroadcast(intent);
+    } else {
+      if (DEBUG) {
+        Log.d(TAG, "Not connected?");
+      }
+    }
+  }
+
+  private void get_user_vard(String user) {
+    if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+      if (DEBUG) {
+        Log.d(TAG, "get_user_vcard -> " + jid_user);
+      }
+      Intent intent = new Intent(KomodoXmppLibPluginService.GET_USER_VCARD);
+      intent.putExtra(KomodoXmppLibPluginService.GET_USER_VCARD_JID, user);
+      activity.sendBroadcast(intent);
+    } else {
+      if (DEBUG) {
+        Log.d(TAG, "Not connected?");
+      }
+    }
+  }
+
+  private void update_my_vard(String data) {
+    if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+      if (DEBUG) {
+        Log.d(TAG, "update my_vcard -> " + data);
+      }
+      Intent intent = new Intent(KomodoXmppLibPluginService.SET_MY_VCARD);
+      intent.putExtra(KomodoXmppLibPluginService.SET_MY_VCARD_DATA, data);
+      activity.sendBroadcast(intent);
+    } else {
+      if (DEBUG) {
+        Log.d(TAG, "Not connected?");
+      }
+    }
+  }
+
   // send message to JID
   private void read_message( String jid_user, String id) {
     Log.d(TAG, "Current Status : " + KomodoXmppLibPluginService.getState().toString());
@@ -306,7 +377,6 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       Intent intent = new Intent(KomodoXmppLibPluginService.READ_MESSAGE);
       intent.putExtra(KomodoXmppLibPluginService.BUNDLE_TO, jid_user);
       intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS, id);
-
       activity.sendBroadcast(intent);
     } else {
       if (DEBUG) {

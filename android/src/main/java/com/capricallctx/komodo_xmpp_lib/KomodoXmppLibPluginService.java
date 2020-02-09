@@ -12,25 +12,24 @@ import java.io.IOException;
 
 public class KomodoXmppLibPluginService extends Service {
     private static final String TAG ="flutter_xmpp";
-
-    public static final String UI_AUTHENTICATED = "com.aldiferdiyan.xmpp.flutter_xmpp.uiauthenticated";
-    public static final String READ_MESSAGE = "com.aldiferdiyan.xmpp.flutter_xmpp.readmessage";
-    public static final String SEND_MESSAGE = "com.aldiferdiyan.xmpp.flutter_xmpp.sendmessage";
+    public static final String READ_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.readmessage";
+    public static final String SEND_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.sendmessage";
     public static final String BUNDLE_MESSAGE_BODY = "b_body";
     public static final String BUNDLE_MESSAGE_PARAMS = "b_body_params";
-    public static final String BUNDLE_TO = "b_to";
-
-    public static final String OUTGOING_MESSAGE = "com.aldiferdiyan.xmpp.flutter_xmpp.outgoinmessage";
-    public static final String BUNDLE_TO_JID = "c_from";
-
-    public static final String GROUP_SEND_MESSAGE = "com.aldiferdiyan.xmpp.flutter_xmpp.sendGroupMessage";
-    public static final String GROUP_MESSAGE_BODY = "group_body";
+    public static final String BUNDLE_TO            = "b_to";
+    public static final String OUTGOING_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.outgoingmessage";
+    public static final String BUNDLE_TO_JID        = "c_from";
+    public static final String GROUP_SEND_MESSAGE   = "com.capricallctx.komodo_xmpp_lib.sendGroupMessage";
+    public static final String GROUP_MESSAGE_BODY   = "group_body";
     public static final String GROUP_MESSAGE_PARAMS = "group_body_params";
-    public static final String GROUP_TO = "group_to";
-
-
-    public static final String RECEIVE_MESSAGE = "com.aldiferdiyan.xmpp.flutter_xmpp.receivemessage";
-    public static final String BUNDLE_FROM_JID = "b_from";
+    public static final String GROUP_TO             = "group_to";
+    public static final String RECEIVE_MESSAGE      = "com.capricallctx.komodo_xmpp_lib.receivemessage";
+    public static final String BUNDLE_FROM_JID      = "b_from";
+    public static final String GET_MY_VCARD         = "com.capricallctx.komodo_xmpp_lib.GET_MY_VCARD";
+    public static final String SET_MY_VCARD         = "com.capricallctx.komodo_xmpp_lib.SET_MY_VCARD";
+    public static final String SET_MY_VCARD_DATA    = "user_vcard_jid";
+    public static final String GET_USER_VCARD       = "com.capricallctx.komodo_xmpp_lib.GET_USER_VCARD";
+    public static final String GET_USER_VCARD_JID   = "user_vcard_jid";
 
     public static KomodoConnection.ConnectionState sConnectionState;
     public static KomodoConnection.LoggedInState sLoggedInState;
@@ -94,7 +93,7 @@ public class KomodoXmppLibPluginService extends Service {
 
     public void start() {
         if(KomodoXmppLibPlugin.DEBUG) {
-            Log.d(TAG, " Service Start() function called.");
+            Log.d(TAG, " xmpp pump started.");
         }
         if(!mActive) {
             mActive = true;
@@ -115,7 +114,7 @@ public class KomodoXmppLibPluginService extends Service {
 
     public void stop() {
         if(KomodoXmppLibPlugin.DEBUG) {
-            Log.d(TAG, "stop()");
+            Log.d(TAG, "xmpp pump stopped.");
         }
         mActive = false;
         mTHandler.post(new Runnable() {

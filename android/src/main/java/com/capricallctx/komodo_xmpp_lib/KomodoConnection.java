@@ -18,6 +18,10 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
+import org.jivesoftware.smackx.vcardtemp.VCardManager;
+import org.jivesoftware.smackx.vcardtemp.packet.VCard;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
@@ -25,6 +29,7 @@ import org.jxmpp.stringprep.XmppStringprepException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Date;
+import java.util.Iterator;
 
 public class KomodoConnection implements ConnectionListener {
     private static final String TAG ="flutter_xmpp";
@@ -35,12 +40,11 @@ public class KomodoConnection implements ConnectionListener {
     private String resource;
     private String host;
     private Integer post;
+    public String myVCard = "";
     private XMPPTCPConnection mConnection;
     private BroadcastReceiver uiThreadMessageReceiver;
-
-
     public enum ConnectionState{
-        CONNECTED ,AUTHENTICATED, CONNECTING ,DISCONNECTING ,DISCONNECTED;
+        CONNECTED ,AUTHENTICATED, CONNECTING ,DISCONNECTING ,DISCONNECTED, LOGINFAILURE;
     }
 
     public  enum LoggedInState{
@@ -65,7 +69,7 @@ public class KomodoConnection implements ConnectionListener {
                 resource = domain_resource[1];
             }else{
                 serviceName = jid_list[1];
-                resource = "Android";
+                resource = "komodo_xmpp_lib";
             }
         }else{
             username ="";
@@ -117,13 +121,10 @@ public class KomodoConnection implements ConnectionListener {
         if(post != 0) {
             conf.setPort(post);
         }
-//        conf.setPort(0);
-
         conf.setUsernameAndPassword(username, password);
         conf.setResource(resource);
         conf.setKeystoreType(null);
         conf.setDebuggerEnabled(true);
-//        conf.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
         conf.setCompressionEnabled(true);
 
         if(KomodoXmppLibPlugin.DEBUG) {
@@ -149,19 +150,15 @@ public class KomodoConnection implements ConnectionListener {
                 Log.d(TAG, " login() Called ");
             }
         } catch (InterruptedException e) {
+            KomodoXmppLibPluginService.sConnectionState=ConnectionState.LOGINFAILURE;
             e.printStackTrace();
         }
-
         setupUiThreadBroadCastMessageReceiver();
-
         ChatManager.getInstanceFor(mConnection).addIncomingListener(new IncomingChatMessageListener() {
             @Override
             public void newIncomingMessage(EntityBareJid messageFrom, Message message, Chat chat) {
                 if(KomodoXmppLibPlugin.DEBUG) {
-
                     Log.d(TAG, "INCOMING :" + message.toString());
-
-                    ///ADDED
                     Log.d(TAG, "message.getBody() :" + message.getBody());
                     Log.d(TAG, "message.getFrom() :" + message.getFrom());
                 }
@@ -231,11 +228,7 @@ public class KomodoConnection implements ConnectionListener {
                 }else {
                     contactJid = from;
                 }
-
-
                 String id = message.getBody("id");
-
-
                 //Bundle up the intent and send the broadcast.
                 Intent intent = new Intent(KomodoXmppLibPluginService.OUTGOING_MESSAGE);
                 intent.setPackage(mApplicationContext.getPackageName());
@@ -248,8 +241,6 @@ public class KomodoConnection implements ConnectionListener {
                 }
             }
         });
-
-
         ReconnectionManager reconnectionManager = ReconnectionManager.getInstanceFor(mConnection);
         reconnectionManager.setEnabledPerDefault(true);
         reconnectionManager.enableAutomaticReconnection();
@@ -259,7 +250,7 @@ public class KomodoConnection implements ConnectionListener {
 
     private void setupUiThreadBroadCastMessageReceiver()
     {
-        Log.d(TAG,"setupUiThreadBroadCastMessageReceiver");
+        Log.d(TAG,"Receiver THREAD has started.....");
 
         uiThreadMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -267,24 +258,38 @@ public class KomodoConnection implements ConnectionListener {
 
                 //Check if the Intents purpose is to send the message.
                 String action = intent.getAction();
-                Log.d(TAG,"broadcast " + action);
+                Log.d(TAG,">>>>>>>>>>>>>>service broadcast " + action);
+                if( action == null){ return; }
+                switch (action) {
+                    case KomodoXmppLibPluginService.GET_MY_VCARD:
+                        Log.d(TAG, "Get request for vcard...");
+                        getMyVcard();
+                        break;
+                    case KomodoXmppLibPluginService.SET_MY_VCARD:
+                        Log.d(TAG, "Get request for vcard...");
+                        updateMyVcard(intent.getStringExtra(KomodoXmppLibPluginService.SET_MY_VCARD_DATA));
+                        break;
+                    case KomodoXmppLibPluginService.GET_USER_VCARD:
+                        Log.d(TAG, "Get request for user vcard...");
+                        getUserVcard(intent.getStringExtra(KomodoXmppLibPluginService.GET_USER_VCARD_JID));
+                        break;
+                    case KomodoXmppLibPluginService.SEND_MESSAGE:
+                        sendMessage(intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY),
+                                intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_TO),
+                                intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS));
 
-                if( action.equals(KomodoXmppLibPluginService.SEND_MESSAGE)) {
-                    //Send the message.
-                    sendMessage(intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY),
-                            intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_TO),
-                            intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS));
+                        break;
+                    case KomodoXmppLibPluginService.READ_MESSAGE:
+                        sendRead(intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_TO),
+                                intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS));
 
-                }else  if( action.equals(KomodoXmppLibPluginService.READ_MESSAGE)) {
-                    //Send the message.
-                    sendRead(intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_TO),
-                            intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS));
-
-                }else  if( action.equals(KomodoXmppLibPluginService.GROUP_SEND_MESSAGE)) {
-                    //Send group message.
-                    sendGroupMessage(intent.getStringExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_BODY),
-                            intent.getStringExtra(KomodoXmppLibPluginService.GROUP_TO),
-                            intent.getStringExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_PARAMS));
+                        break;
+                    case KomodoXmppLibPluginService.GROUP_SEND_MESSAGE:
+                        //Send group message.
+                        sendGroupMessage(intent.getStringExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_BODY),
+                                intent.getStringExtra(KomodoXmppLibPluginService.GROUP_TO),
+                                intent.getStringExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_PARAMS));
+                        break;
                 }
             }
         };
@@ -292,8 +297,86 @@ public class KomodoConnection implements ConnectionListener {
         IntentFilter filter = new IntentFilter();
         filter.addAction(KomodoXmppLibPluginService.SEND_MESSAGE);
         filter.addAction(KomodoXmppLibPluginService.READ_MESSAGE);
+        filter.addAction(KomodoXmppLibPluginService.GET_MY_VCARD);
+        filter.addAction(KomodoXmppLibPluginService.SET_MY_VCARD);
+        filter.addAction(KomodoXmppLibPluginService.GET_USER_VCARD);
         mApplicationContext.registerReceiver(uiThreadMessageReceiver,filter);
 
+    }
+
+    private void updateMyVcard(String mapString){
+        try {
+            Log.d(TAG, "Updating vcard...");
+            Log.d(TAG, mapString);
+            JSONObject jo = new JSONObject(mapString);
+            VCard ownVCard = new VCard();
+            ownVCard.load(mConnection);
+            Iterator<String> keys = jo.keys();
+            while( keys.hasNext()){
+                String field = keys.next();
+                Log.d(TAG, field);
+                switch (field){
+                    case "nickname":
+                        ownVCard.setNickName(jo.getString("nickname"));
+                        break;
+                    case "email":
+                        ownVCard.setEmailHome(jo.get("email").toString());
+                        break;
+                    case "phone":
+                        ownVCard.setPhoneHome("VOICE", jo.getString("address"));
+                        break;
+                }
+            }
+            ownVCard.save(mConnection);
+        } catch (JSONException | SmackException.NoResponseException | XMPPException.XMPPErrorException | SmackException.NotConnectedException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getMyVcard(){
+        VCard vCard = new VCard();
+        Log.d(TAG, "XMPP Request << vcard...");
+        try {
+            vCard = VCardManager.getInstanceFor(mConnection).loadVCard();
+//            vCard.load(mConnection);
+        } catch (SmackException.NoResponseException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        }
+        this.myVCard =  vCard.toXML().toString();
+        Log.d(TAG, this.myVCard);
+    }
+
+    private void getUserVcard(String thisUser){
+        VCard vCard = new VCard();
+        Log.d(TAG, "XMPP Request << vcard...");
+        try {
+            EntityBareJid jid = JidCreate.entityBareFrom(thisUser);
+            vCard = VCardManager.getInstanceFor(mConnection).loadVCard(jid);
+        } catch (SmackException.NoResponseException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException | XmppStringprepException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
+        }
+        this.myVCard =  vCard.toXML().toString();
+        Log.d(TAG, this.myVCard);
     }
 
     private void sendRead (String toJid, String id)
@@ -324,10 +407,10 @@ public class KomodoConnection implements ConnectionListener {
 
     private void sendGroupMessage (String body , String toRoom, String id)
     {
-//        Log.d(TAG,"Sending group message to :"+ toRoom);
-//        EntityBareJid jid = null;
-//        ChatManager chatManager = ChatManager.getInstanceFor(mConnection);
-//
+        Log.d(TAG,"Sending group message to :"+ toRoom);
+        EntityBareJid jid = null;
+        ChatManager chatManager = ChatManager.getInstanceFor(mConnection);
+
 //         try {
 //             MultiUserChat muc = chatManager.("test2@conference.cca");
 //
@@ -387,7 +470,7 @@ public class KomodoConnection implements ConnectionListener {
 
     public void disconnect() {
         if(KomodoXmppLibPlugin.DEBUG) {
-            Log.d(TAG, "Disconnecting from serser " + serviceName);
+            Log.d(TAG, "Disconnecting from server " + serviceName);
         }
         if (mConnection != null){
             mConnection.disconnect();

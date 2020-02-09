@@ -1,6 +1,5 @@
 import 'dart:async';
-
-import 'package:flutter/cupertino.dart';
+import 'dart:convert';
 import 'package:flutter/services.dart';
 
 class KomodoXmppLib {
@@ -47,6 +46,30 @@ class KomodoXmppLib {
     String status = await _channel.invokeMethod('send_group_message',params);
     return status;
   }
+
+  Future<String> getMyVcard() async {
+    String status = await _channel.invokeMethod('my_vcard');
+    return status;
+  }
+
+  Future<String> getUserVcard(user) async {
+    var params = {
+      "user": user,
+    };
+    print(params);
+    String status = await _channel.invokeMethod('get_user_vcard', params);
+    return status;
+  }
+
+  Future<String> setMyVcard(map) async {
+    
+    var params = {
+      "data": jsonEncode(map),
+    };
+    String status = await _channel.invokeMethod('set_user_vcard', params);
+    return status;
+  }
+
 
   Future<String> readMessage(String toJid,String Id) async {
     var params = {
