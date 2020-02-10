@@ -15,6 +15,10 @@ import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener;
 import org.jivesoftware.smack.chat2.OutgoingChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
@@ -28,6 +32,7 @@ import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -300,6 +305,7 @@ public class KomodoConnection implements ConnectionListener {
         filter.addAction(KomodoXmppLibPluginService.GET_MY_VCARD);
         filter.addAction(KomodoXmppLibPluginService.SET_MY_VCARD);
         filter.addAction(KomodoXmppLibPluginService.GET_USER_VCARD);
+        filter.addAction(KomodoXmppLibPluginService.GOT_USER_VCARD);
         mApplicationContext.registerReceiver(uiThreadMessageReceiver,filter);
 
     }
@@ -355,9 +361,9 @@ public class KomodoConnection implements ConnectionListener {
         this.myVCard =  vCard.toXML().toString();
         Log.d(TAG, this.myVCard);
         //Bundle up the intent and send the broadcast.
-        Intent intent = new Intent(KomodoXmppLibPluginService.UPDATED_MY_VCARD);
+        Intent intent = new Intent(KomodoXmppLibPluginService.GOT_MY_VCARD);
         intent.setPackage(mApplicationContext.getPackageName());
-        intent.putExtra(KomodoXmppLibPluginService.GET_USER_VCARD,this.myVCard);
+        intent.putExtra(KomodoXmppLibPluginService.DATA_READY,this.myVCard);
         mApplicationContext.sendBroadcast(intent);
     }
 
@@ -381,6 +387,10 @@ public class KomodoConnection implements ConnectionListener {
             e.printStackTrace();
         }
         this.myVCard =  vCard.toXML().toString();
+        // send data
+        Intent intent = new Intent(KomodoXmppLibPluginService.GOT_USER_VCARD);
+        intent.setPackage(mApplicationContext.getPackageName());
+        intent.putExtra(KomodoXmppLibPluginService.GET_USER_VCARD,this.myVCard);
         Log.d(TAG, this.myVCard);
     }
 
@@ -537,6 +547,46 @@ public class KomodoConnection implements ConnectionListener {
     public void reconnectionFailed(Exception e) {
         KomodoXmppLibPluginService.sConnectionState = ConnectionState.DISCONNECTED;
         Log.d(TAG,"ReconnectionFailed()");
+
+    }
+
+    private void setPresence(String state){
+        Presence presence;
+        try {
+        switch (state) {
+            // 0. Online 1. Q me 2. Busy 3. Do not disturb 4. Leave 5. Stealth 6. Offline
+            case KomodoXmppLibPluginService.PRESENCE_ONLINE:
+                presence = new Presence(Presence.Type.available);
+                    mConnection.sendPacket(presence);
+                break;
+            case KomodoXmppLibPluginService.PRESENCE_LONELY:
+                presence = new Presence(Presence.Type.available);
+                presence.setMode(Presence.Mode.chat);
+                mConnection.sendPacket(presence);
+                break;
+            case KomodoXmppLibPluginService.PRESENCE_BUSY:
+                presence = new Presence(Presence.Type.available);
+                presence.setMode(Presence.Mode.dnd);
+                mConnection.sendPacket(presence);
+                break;
+            case KomodoXmppLibPluginService.PRESENCE_DND:
+                presence = new Presence(Presence.Type.available);
+                presence.setMode(Presence.Mode.xa);
+                mConnection.sendPacket(presence);
+                break;
+            case KomodoXmppLibPluginService.PRESENCE_AWAY:
+                presence = new Presence(Presence.Type.available);
+                presence.setMode(Presence.Mode.away);
+                mConnection.sendPacket(presence);
+                break;
+            case KomodoXmppLibPluginService.PRESENCE_STEALTH:
+                break;
+        }
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 

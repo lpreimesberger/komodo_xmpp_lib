@@ -8,7 +8,6 @@ import android.util.Log;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterListener;
-import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.jxmpp.jid.Jid;
 import java.util.Collection;
 import io.flutter.app.FlutterActivity;
@@ -30,7 +29,6 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
   private String password = "";
   private String host = "";
   private Integer port = 0;
-  public String myVcard = "";
   private BroadcastReceiver mBroadcastReceiver = null;
 
 
@@ -52,11 +50,20 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
         String action = intent.getAction();
         if( action == null ){ return; }
         switch (action) {
-          case KomodoXmppLibPluginService.UPDATED_MY_VCARD:
-            Log.d(TAG,"Received user vcard - sending upstream");
+          case KomodoXmppLibPluginService.GOT_USER_VCARD:
+            Log.d(TAG,"Received somebody's vcard - sending upstream");
             String vcardJSON = intent.getStringExtra(KomodoXmppLibPluginService.DATA_READY);
             Log.d(TAG, vcardJSON);
             Map<String, Object> build_vcard = new HashMap<>();
+            build_vcard.put("type", "user_vcard");
+            build_vcard.put("data", vcardJSON);
+            events.success(build_vcard);
+
+          case KomodoXmppLibPluginService.UPDATED_MY_VCARD:
+            Log.d(TAG,"Received user vcard - sending upstream");
+            vcardJSON = intent.getStringExtra(KomodoXmppLibPluginService.DATA_READY);
+            Log.d(TAG, vcardJSON);
+            build_vcard = new HashMap<>();
             build_vcard.put("type", "my_vcard");
             build_vcard.put("data", vcardJSON);
             events.success(build_vcard);
@@ -95,9 +102,15 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       }
     };
   }
+
+  /**
+   * this is the filter for things we care about from the worker (service) thread
+   * we currently listen for messsages and 'data' - the UI thread needs to register to get
+   * @param auth
+   * @param eventSink
+   */
   @Override
   public void onListen(Object auth, EventChannel.EventSink eventSink) {
-
     if (mBroadcastReceiver == null) {
       if (DEBUG) {
         Log.w(TAG, "adding listener");
@@ -107,6 +120,8 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       filter.addAction(KomodoXmppLibPluginService.RECEIVE_MESSAGE);
       filter.addAction(KomodoXmppLibPluginService.OUTGOING_MESSAGE);
       filter.addAction(KomodoXmppLibPluginService.UPDATED_MY_VCARD);
+      filter.addAction(KomodoXmppLibPluginService.GOT_USER_VCARD);
+      filter.addAction(KomodoXmppLibPluginService.GOT_MY_VCARD);
       filter.addAction(KomodoXmppLibPluginService.DATA_READY);
       activity.registerReceiver(mBroadcastReceiver, filter);
     }
@@ -394,7 +409,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     }
   }
 
-  private void set_presence() {
+  private void set_presence(int state) {
 
   }
 

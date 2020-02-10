@@ -32,8 +32,18 @@ public class KomodoXmppLibPluginService extends Service {
     public static final String SET_MY_VCARD_DATA    = "user_vcard_jid";
     public static final String GET_USER_VCARD       = "com.capricallctx.komodo_xmpp_lib.GET_USER_VCARD";
     public static final String GET_USER_VCARD_JID   = "user_vcard_jid";
+    public static final String GOT_USER_VCARD       = "com.capricallctx.komodo_xmpp_lib.GOT_USER_VCARD";
+    public static final String GOT_MY_VCARD       = "com.capricallctx.komodo_xmpp_lib.GOT_MY_VCARD";
     // data back messages
     public static final String DATA_READY       = "com.capricallctx.komodo_xmpp_lib.DATA_READY";
+    // presence
+    public static final String PRESENCE_ONLINE       = "PRESENCE_ONLINE";
+    public static final String PRESENCE_LONELY       = "PRESENCE_LONELY";
+    public static final String PRESENCE_BUSY         = "PRESENCE_BUSY";
+    public static final String PRESENCE_DND          = "PRESENCE_DND";
+    public static final String PRESENCE_AWAY         = "PRESENCE_AWAY";
+    public static final String PRESENCE_STEALTH      = "PRESENCE_STEALTH";
+    public static final String PRESENCE_OFFLINE      = "PRESENCE_OFFLINE";
     public static KomodoConnection.ConnectionState sConnectionState;
     public static KomodoConnection.LoggedInState sLoggedInState;
     private boolean mActive;

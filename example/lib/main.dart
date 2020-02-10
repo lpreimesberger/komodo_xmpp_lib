@@ -44,12 +44,12 @@ class _MyAppState extends State<MyApp> {
     sleep(const Duration(seconds:2)); // just sample wait for get current state
     print(await session.currentState()); // get current state
     // sending Message
-    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
+//    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
     // read Message
     var vcard = { "nickname": "cats" };
-    await session.setMyVcard(vcard);
+//    await session.setMyVcard(vcard);
 //  await session.getMyVcard();
-//    await session.getUserVcard("caprica@sg01.komodochat.app");
+    await session.getUserVcard("caprica@sg01.komodochat.app");
     // life cycle, if app not active, kill stream get incoming message ..
     lifeCycle();
 
@@ -70,7 +70,11 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+
   void _onReceiveMessage(dynamic event) {
+    /**
+     * async message from worker thread in background
+     */
     print(event);
     if( event["type"] == "my_vcard"){
       print(event["data"]);
