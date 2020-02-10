@@ -354,6 +354,11 @@ public class KomodoConnection implements ConnectionListener {
         }
         this.myVCard =  vCard.toXML().toString();
         Log.d(TAG, this.myVCard);
+        //Bundle up the intent and send the broadcast.
+        Intent intent = new Intent(KomodoXmppLibPluginService.UPDATED_MY_VCARD);
+        intent.setPackage(mApplicationContext.getPackageName());
+        intent.putExtra(KomodoXmppLibPluginService.GET_USER_VCARD,this.myVCard);
+        mApplicationContext.sendBroadcast(intent);
     }
 
     private void getUserVcard(String thisUser){

@@ -52,6 +52,15 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
         String action = intent.getAction();
         if( action == null ){ return; }
         switch (action) {
+          case KomodoXmppLibPluginService.UPDATED_MY_VCARD:
+            Log.d(TAG,"Received user vcard - sending upstream");
+            String vcardJSON = intent.getStringExtra(KomodoXmppLibPluginService.DATA_READY);
+            Log.d(TAG, vcardJSON);
+            Map<String, Object> build_vcard = new HashMap<>();
+            build_vcard.put("type", "my_vcard");
+            build_vcard.put("data", vcardJSON);
+            events.success(build_vcard);
+
           case KomodoXmppLibPluginService.RECEIVE_MESSAGE:
             String from = intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID);
             String body = intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY);
@@ -97,6 +106,8 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       IntentFilter filter = new IntentFilter();
       filter.addAction(KomodoXmppLibPluginService.RECEIVE_MESSAGE);
       filter.addAction(KomodoXmppLibPluginService.OUTGOING_MESSAGE);
+      filter.addAction(KomodoXmppLibPluginService.UPDATED_MY_VCARD);
+      filter.addAction(KomodoXmppLibPluginService.DATA_READY);
       activity.registerReceiver(mBroadcastReceiver, filter);
     }
 
@@ -367,13 +378,11 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     }
   }
 
-  // send message to JID
+
   private void read_message( String jid_user, String id) {
     Log.d(TAG, "Current Status : " + KomodoXmppLibPluginService.getState().toString());
     if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
-      if (DEBUG) {
-        Log.d(TAG, "Got message for -> " + jid_user);
-      }
+      Log.d(TAG, "Got message for -> " + jid_user);
       Intent intent = new Intent(KomodoXmppLibPluginService.READ_MESSAGE);
       intent.putExtra(KomodoXmppLibPluginService.BUNDLE_TO, jid_user);
       intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS, id);

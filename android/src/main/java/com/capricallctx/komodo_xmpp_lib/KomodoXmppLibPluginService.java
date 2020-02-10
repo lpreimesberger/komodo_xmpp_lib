@@ -11,6 +11,8 @@ import org.jivesoftware.smack.XMPPException;
 import java.io.IOException;
 
 public class KomodoXmppLibPluginService extends Service {
+    public static final String UPDATED_MY_VCARD = "com.capricallctx.komodo_xmpp_lib.GOT_MY_VCARD";;
+    public static final String UPDATED_USER_VCARD = "com.capricallctx.komodo_xmpp_lib.GOT_USER_VCARD";;
     private static final String TAG ="flutter_xmpp";
     public static final String READ_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.readmessage";
     public static final String SEND_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.sendmessage";
@@ -30,7 +32,8 @@ public class KomodoXmppLibPluginService extends Service {
     public static final String SET_MY_VCARD_DATA    = "user_vcard_jid";
     public static final String GET_USER_VCARD       = "com.capricallctx.komodo_xmpp_lib.GET_USER_VCARD";
     public static final String GET_USER_VCARD_JID   = "user_vcard_jid";
-
+    // data back messages
+    public static final String DATA_READY       = "com.capricallctx.komodo_xmpp_lib.DATA_READY";
     public static KomodoConnection.ConnectionState sConnectionState;
     public static KomodoConnection.LoggedInState sLoggedInState;
     private boolean mActive;

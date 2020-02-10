@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -42,7 +44,7 @@ class _MyAppState extends State<MyApp> {
     sleep(const Duration(seconds:2)); // just sample wait for get current state
     print(await session.currentState()); // get current state
     // sending Message
-//    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
+    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
     // read Message
     var vcard = { "nickname": "cats" };
     await session.setMyVcard(vcard);
@@ -70,7 +72,10 @@ class _MyAppState extends State<MyApp> {
 
   void _onReceiveMessage(dynamic event) {
     print(event);
-    if(event["type"] == "incoming") {
+    if( event["type"] == "my_vcard"){
+      print(event["data"]);
+    }
+    else if(event["type"] == "incoming") {
       setState(() {
         rerceiveMessageFrom = event['from'];
         rerceiveMessageBody = event['body'];
