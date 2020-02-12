@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:xml/xml.dart' as xml;
 
 class KomodoXmppLib {
   static const MethodChannel _channel =
@@ -91,5 +92,35 @@ class KomodoXmppLib {
 
   Future<void> stop() async {
     streamGetMsg.cancel();
+
   }
+
+  // utility
+  Map<String,String> vcardToMap(String jsonString  ){
+    /**
+     * convert a vcard xml (as a string) to a flat map of fieldsv
+     */
+  Map<String, String> map = new Map<String,String>();
+  var parsed =  xml.parse(jsonString);
+  Iterable<xml.XmlElement> i = parsed.findAllElements("iq");
+  for( var element in i ){
+    for( var attr in element.attributes ){
+      print(attr.name);
+      print(attr.value);
+      map[attr.name.toString()] = attr.value;
+    }
+    print(element.name.toString());
+    for( var innerElement in element.children){
+      for( var vcardElement in innerElement.children){
+        print( vcardElement.toXmlString());
+        var node = vcardElement.toXmlString().split(">")[0];
+        node = node.substring(1);
+        map[node] = vcardElement.text;
+        print(vcardElement.attributes);
+        print(vcardElement.text);
+      }
+    }
+  }
+  return map;
+}
 }

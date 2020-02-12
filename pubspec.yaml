@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # flutter_test doesn't work with latest xml - lock to 3.5
+  xml: ^3.5.0
 
 dev_dependencies:
   flutter_test:
