@@ -323,14 +323,23 @@ public class KomodoConnection implements ConnectionListener {
                 Log.d(TAG, field);
                 switch (field){
                     case "nickname":
-                        ownVCard.setNickName(jo.getString("nickname"));
+                        if( jo.has("nickname"))
+                            ownVCard.setNickName(jo.getString("nickname"));
                         break;
                     case "email":
-                        ownVCard.setEmailHome(jo.get("email").toString());
+                        if( jo.has("email"))
+                            ownVCard.setEmailHome(jo.get("email").toString());
                         break;
                     case "phone":
-                        ownVCard.setPhoneHome("VOICE", jo.getString("address"));
+                        if( jo.has("phone"))
+                            ownVCard.setPhoneHome("VOICE", jo.getString("phone"));
                         break;
+                    case "description":
+                        if( jo.has("description"))
+                            ownVCard.setField("DESC", jo.get("description").toString());
+                    case "fullname":
+                        if( jo.has("fullname"))
+                            ownVCard.setField("FN", jo.get("fullname").toString());
                 }
             }
             ownVCard.save(mConnection);
