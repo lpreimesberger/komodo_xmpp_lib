@@ -53,6 +53,12 @@ class KomodoXmppLib {
     return status;
   }
 
+  Future<String> getRoster() async {
+    String status = await _channel.invokeMethod('get_roster');
+    return status;
+  }
+
+
   Future<String> getUserVcard(user) async {
     var params = {
       "user": user,

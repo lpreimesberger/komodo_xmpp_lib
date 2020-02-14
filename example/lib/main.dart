@@ -50,6 +50,7 @@ class _MyAppState extends State<MyApp> {
 //    await session.setMyVcard(vcard);
 //  await session.getMyVcard();
     await session.getUserVcard("caprica@sg01.komodochat.app");
+    await session.getRoster();
     // life cycle, if app not active, kill stream get incoming message ..
     lifeCycle();
 

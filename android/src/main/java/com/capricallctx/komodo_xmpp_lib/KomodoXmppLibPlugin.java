@@ -5,11 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
+
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterListener;
 import org.jxmpp.jid.Jid;
-import java.util.Collection;
+
 import io.flutter.app.FlutterActivity;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
@@ -50,14 +51,30 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
         String action = intent.getAction();
         if( action == null ){ return; }
         switch (action) {
+          case KomodoXmppLibPluginService.GOT_ROSTER:
+            Log.d(TAG,"Received somebody's roster - sending upstream");
+            String rosterJSON = intent.getStringExtra(KomodoXmppLibPluginService.DATA_READY);
+            if( rosterJSON == null ){
+              Log.d(TAG, "Null roster - ignoring...");
+              return;
+            }
+            Log.d(TAG, rosterJSON);
+            Map<String, Object> build_vcard = new HashMap<>();
+            build_vcard.put("type", "roster");
+            build_vcard.put("data", rosterJSON);
+            events.success(build_vcard);
           case KomodoXmppLibPluginService.GOT_USER_VCARD:
             Log.d(TAG,"Received somebody's vcard - sending upstream");
             String vcardJSON = intent.getStringExtra(KomodoXmppLibPluginService.DATA_READY);
+            if( vcardJSON == null ){
+              Log.d(TAG, "Null vcard - ignoring...");
+              return;
+            }
             Log.d(TAG, vcardJSON);
-            Map<String, Object> build_vcard = new HashMap<>();
-            build_vcard.put("type", "user_vcard");
-            build_vcard.put("data", vcardJSON);
-            events.success(build_vcard);
+            Map<String, Object> build_roster = new HashMap<>();
+            build_roster.put("type", "user_vcard");
+            build_roster.put("data", vcardJSON);
+            events.success(build_roster);
 
           case KomodoXmppLibPluginService.UPDATED_MY_VCARD:
             Log.d(TAG,"Received user vcard - sending upstream");
@@ -122,6 +139,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       filter.addAction(KomodoXmppLibPluginService.UPDATED_MY_VCARD);
       filter.addAction(KomodoXmppLibPluginService.GOT_USER_VCARD);
       filter.addAction(KomodoXmppLibPluginService.GOT_MY_VCARD);
+      filter.addAction(KomodoXmppLibPluginService.GOT_ROSTER);
       filter.addAction(KomodoXmppLibPluginService.DATA_READY);
       activity.registerReceiver(mBroadcastReceiver, filter);
     }
@@ -173,6 +191,11 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
   public void onMethodCall(MethodCall call, Result result) {
     Log.d(TAG, "METHOD CALL ------------------" + call.method );
     switch (call.method) {
+      case "get_roster":
+        Log.d(TAG, "Get roster");
+        getRoster();
+        result.success("SUCCESS");
+        break;
       case "my_vcard":
         Log.d(TAG, "Fetching vcard...");
         get_my_vard();
@@ -345,6 +368,19 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       }
     }
   }
+
+  private void getRoster() {
+    if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+      Log.d(TAG, "getRoster -> " );
+      Intent intent = new Intent(KomodoXmppLibPluginService.GET_ROSTER);
+      activity.sendBroadcast(intent);
+    } else {
+      if (DEBUG) {
+        Log.d(TAG, "Not connected?");
+      }
+    }
+  }
+
 
   private void get_my_vard() {
     if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {

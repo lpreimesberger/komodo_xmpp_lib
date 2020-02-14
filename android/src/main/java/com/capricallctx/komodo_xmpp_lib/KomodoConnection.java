@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
@@ -266,6 +269,10 @@ public class KomodoConnection implements ConnectionListener {
                 Log.d(TAG,">>>>>>>>>>>>>>service broadcast " + action);
                 if( action == null){ return; }
                 switch (action) {
+                    case KomodoXmppLibPluginService.GET_ROSTER:
+                        Log.d(TAG, "Get request for roster...");
+                        getRoster();
+                        break;
                     case KomodoXmppLibPluginService.GET_MY_VCARD:
                         Log.d(TAG, "Get request for vcard...");
                         getMyVcard();
@@ -305,7 +312,7 @@ public class KomodoConnection implements ConnectionListener {
         filter.addAction(KomodoXmppLibPluginService.GET_MY_VCARD);
         filter.addAction(KomodoXmppLibPluginService.SET_MY_VCARD);
         filter.addAction(KomodoXmppLibPluginService.GET_USER_VCARD);
-        filter.addAction(KomodoXmppLibPluginService.GOT_USER_VCARD);
+        filter.addAction(KomodoXmppLibPluginService.GET_ROSTER);
         mApplicationContext.registerReceiver(uiThreadMessageReceiver,filter);
 
     }
@@ -400,6 +407,7 @@ public class KomodoConnection implements ConnectionListener {
         Intent intent = new Intent(KomodoXmppLibPluginService.GOT_USER_VCARD);
         intent.setPackage(mApplicationContext.getPackageName());
         intent.putExtra(KomodoXmppLibPluginService.GET_USER_VCARD,this.myVCard);
+        mApplicationContext.sendBroadcast(intent);
         Log.d(TAG, this.myVCard);
     }
 
@@ -599,5 +607,37 @@ public class KomodoConnection implements ConnectionListener {
 
     }
 
+    public void getRoster(){
+        String encoded = "{[";
+        try{
+            // get the roster and if it is not loaded reload it
+            Roster roster = Roster.getInstanceFor(mConnection);
+            if (!roster.isLoaded())
+                roster.reloadAndWait();
+            RosterEntry[] result = new RosterEntry[roster.getEntries().size()];
+            int i = 0;
+            // loop through all roster entries and append them to the array
+            for (RosterEntry entry: roster.getEntries()){
+                Log.d(TAG, entry.toString());
+                result[i++] = entry;
+                String tempObject = "{\n"
+                        + "\t\"jid\":\"" + entry.getJid() + "\"\n"
+                        + "\t\"fn\":\"" + entry.getName() + "\"\n"
+                        + "\t\"presence_available\":\""  + entry.canSeeHisPresence() + "\"\n"
+                        + "\t\"can_see_me\":\""  + entry.canSeeMyPresence() + "\"\n"
+                + "};";
+                encoded = encoded + "\n\t" + tempObject;
+                Log.d(TAG, tempObject);
+            }
+            encoded = encoded + "\n]}";
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        Intent intent = new Intent(KomodoXmppLibPluginService.GOT_ROSTER);
+        intent.setPackage(mApplicationContext.getPackageName());
+        intent.putExtra(KomodoXmppLibPluginService.DATA_READY, encoded);
+        mApplicationContext.sendBroadcast(intent);
+
+    }
 
 }
