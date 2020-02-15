@@ -22,6 +22,8 @@ import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.roster.RosterGroup;
+import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
@@ -30,14 +32,19 @@ import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class KomodoConnection implements ConnectionListener {
     private static final String TAG ="flutter_xmpp";
@@ -51,12 +58,14 @@ public class KomodoConnection implements ConnectionListener {
     public String myVCard = "";
     private XMPPTCPConnection mConnection;
     private BroadcastReceiver uiThreadMessageReceiver;
+    private Roster roster;
+
     public enum ConnectionState{
         CONNECTED ,AUTHENTICATED, CONNECTING ,DISCONNECTING ,DISCONNECTED, LOGINFAILURE;
     }
 
     public  enum LoggedInState{
-        LOGGED_IN , LOGGED_OUT;
+        LOGGED_IN , LOGGED_OUT
     }
 
     public KomodoConnection(Context context,String jid_user,String password,String host,Integer port){
@@ -147,6 +156,33 @@ public class KomodoConnection implements ConnectionListener {
         //Set up the ui thread broadcast message receiver.
 
         mConnection = new XMPPTCPConnection(conf.build());
+        roster = Roster.getInstanceFor(mConnection);
+        roster.addRosterListener(new RosterListener() {
+                                     @Override
+                                     public void entriesAdded(Collection<Jid> addresses) {
+                                         Log.d(TAG, "Added roster");
+                                     }
+
+                                     @Override
+                                     public void entriesUpdated(Collection<Jid> addresses) {
+                                         Log.d(TAG, "Updated roster");
+
+                                     }
+
+                                     @Override
+                                     public void entriesDeleted(Collection<Jid> addresses) {
+                                         Log.d(TAG, "Deleted roster");
+
+                                     }
+
+                                     @Override
+                                     public void presenceChanged(Presence presence) {
+                                         Log.d(TAG, "Presence changed");
+                                         Log.d(TAG, presence.toString());
+
+                                     }
+                                 }
+        );
         mConnection.addConnectionListener(this);
         try {
             if(KomodoXmppLibPlugin.DEBUG) {
@@ -608,10 +644,13 @@ public class KomodoConnection implements ConnectionListener {
     }
 
     public void getRoster(){
-        String encoded = "{[";
+        HashMap<String,String> ms = new HashMap<>();
+        List<HashMap> list = new ArrayList<>();
+        Gson gson = new GsonBuilder().create();
+        StringBuilder encoded = new StringBuilder("{[");
         try{
             // get the roster and if it is not loaded reload it
-            Roster roster = Roster.getInstanceFor(mConnection);
+
             if (!roster.isLoaded())
                 roster.reloadAndWait();
             RosterEntry[] result = new RosterEntry[roster.getEntries().size()];
@@ -620,22 +659,29 @@ public class KomodoConnection implements ConnectionListener {
             for (RosterEntry entry: roster.getEntries()){
                 Log.d(TAG, entry.toString());
                 result[i++] = entry;
-                String tempObject = "{\n"
-                        + "\t\"jid\":\"" + entry.getJid() + "\"\n"
-                        + "\t\"fn\":\"" + entry.getName() + "\"\n"
-                        + "\t\"presence_available\":\""  + entry.canSeeHisPresence() + "\"\n"
-                        + "\t\"can_see_me\":\""  + entry.canSeeMyPresence() + "\"\n"
-                + "};";
-                encoded = encoded + "\n\t" + tempObject;
-                Log.d(TAG, tempObject);
+
+                ms.put("jid", entry.getJid().toString());
+                ms.put("fn", entry.getName() );
+                ms.put("can_see", entry.canSeeHisPresence() ? "true" : "false" );
+                ms.put("can_be_seen_by", entry.canSeeMyPresence() ? "true" : "false" );
+                List<RosterGroup>  groups = entry.getGroups();
+                StringBuilder groupList = new StringBuilder("");
+                for( RosterGroup  group: groups){
+                    groupList.append(",");
+                    groupList.append(group.getName());
+                }
+                ms.put("groups", groupList.toString());
+                list.add(ms);
+
+
             }
-            encoded = encoded + "\n]}";
+            encoded.append("\n]}");
         }catch (Exception e){
             e.printStackTrace();
         }
         Intent intent = new Intent(KomodoXmppLibPluginService.GOT_ROSTER);
         intent.setPackage(mApplicationContext.getPackageName());
-        intent.putExtra(KomodoXmppLibPluginService.DATA_READY, encoded);
+        intent.putExtra(KomodoXmppLibPluginService.DATA_READY, gson.toJson(list) );
         mApplicationContext.sendBroadcast(intent);
 
     }

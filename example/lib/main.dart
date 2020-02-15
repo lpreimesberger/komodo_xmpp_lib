@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -17,8 +18,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   KomodoXmppLib session;
-  String rerceiveMessageFrom = '';
-  String rerceiveMessageBody = '';
+  String recieveMessageFrom = '';
+  String recieveMessageBody = '';
 
   @override
   void initState() {
@@ -49,7 +50,7 @@ class _MyAppState extends State<MyApp> {
     var vcard = { "nickname": "cats" };
 //    await session.setMyVcard(vcard);
 //  await session.getMyVcard();
-    await session.getUserVcard("caprica@sg01.komodochat.app");
+//    await session.getUserVcard("caprica@sg01.komodochat.app");
     await session.getRoster();
     // life cycle, if app not active, kill stream get incoming message ..
     lifeCycle();
@@ -80,17 +81,23 @@ class _MyAppState extends State<MyApp> {
     if( event["type"] == "my_vcard"){
       print(event["data"]);
     }
+    else if(event["type"] == "roster") {
+      print("roster test passed");
+      print(event["data"]);
+      var rosterData = jsonDecode(event["data"]);
+      print(rosterData);
+    }
     else if(event["type"] == "incoming") {
       setState(() {
-        rerceiveMessageFrom = event['from'];
-        rerceiveMessageBody = event['body'];
-        rerceiveMessageBody = event['id']; // chat ID
+        recieveMessageFrom = event['from'];
+        recieveMessageBody = event['body'];
+        recieveMessageBody = event['id']; // chat ID
       });
     } else {
       setState(() {
-        rerceiveMessageFrom = event['to'];
-        rerceiveMessageBody = event['body'];
-        rerceiveMessageBody = event['id']; // chat ID
+        recieveMessageFrom = event['to'];
+        recieveMessageBody = event['body'];
+        recieveMessageBody = event['id']; // chat ID
       });
     }
   }
