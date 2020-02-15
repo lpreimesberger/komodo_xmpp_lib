@@ -644,7 +644,7 @@ public class KomodoConnection implements ConnectionListener {
     }
 
     public void getRoster(){
-        HashMap<String,String> ms = new HashMap<>();
+
         List<HashMap> list = new ArrayList<>();
         Gson gson = new GsonBuilder().create();
         StringBuilder encoded = new StringBuilder("{[");
@@ -659,9 +659,13 @@ public class KomodoConnection implements ConnectionListener {
             for (RosterEntry entry: roster.getEntries()){
                 Log.d(TAG, entry.toString());
                 result[i++] = entry;
-
+                VCard vCard = VCardManager.getInstanceFor(mConnection).loadVCard((EntityBareJid) entry.getJid());
+                HashMap<String,String> ms = new HashMap<>();
                 ms.put("jid", entry.getJid().toString());
                 ms.put("fn", entry.getName() );
+                ms.put("nn", vCard.getNickName());
+                ms.put("ph", vCard.getPhoneHome("VOICE"));
+                ms.put("avatar_hash", vCard.getAvatarHash());
                 ms.put("can_see", entry.canSeeHisPresence() ? "true" : "false" );
                 ms.put("can_be_seen_by", entry.canSeeMyPresence() ? "true" : "false" );
                 List<RosterGroup>  groups = entry.getGroups();
