@@ -88,6 +88,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
           case KomodoXmppLibPluginService.RECEIVE_MESSAGE:
             String from = intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID);
             String body = intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY);
+            String type =  intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_TYPE);
             String idIncoming = intent.getStringExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS);
 
             if (DEBUG) {
@@ -97,6 +98,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
             build.put("type", "incoming");
             build.put("id", idIncoming);
             build.put("from", from);
+            build.put("message_type", type);
             build.put("body", body);
             events.success(build);
             break;

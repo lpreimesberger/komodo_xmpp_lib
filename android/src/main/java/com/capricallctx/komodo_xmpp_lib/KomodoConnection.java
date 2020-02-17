@@ -3,6 +3,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.util.Base64;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -202,6 +203,7 @@ public class KomodoConnection implements ConnectionListener {
             @Override
             public void newIncomingMessage(EntityBareJid messageFrom, Message message, Chat chat) {
                 if(KomodoXmppLibPlugin.DEBUG) {
+                    Log.d(TAG, message.getType().toString());
                     Log.d(TAG, "INCOMING :" + message.toString());
                     Log.d(TAG, "message.getBody() :" + message.getBody());
                     Log.d(TAG, "message.getFrom() :" + message.getFrom());
@@ -231,6 +233,7 @@ public class KomodoConnection implements ConnectionListener {
                 Intent intent = new Intent(KomodoXmppLibPluginService.RECEIVE_MESSAGE);
                 intent.setPackage(mApplicationContext.getPackageName());
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID,contactJid);
+                intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_TYPE, message.getType().toString());
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY,message.getBody());
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS,id);
 
@@ -666,6 +669,10 @@ public class KomodoConnection implements ConnectionListener {
                 ms.put("nn", vCard.getNickName());
                 ms.put("ph", vCard.getPhoneHome("VOICE"));
                 ms.put("avatar_hash", vCard.getAvatarHash());
+                byte[] icon = vCard.getAvatar();
+                String theIcon = Base64.encodeToString(icon, Base64.NO_WRAP);
+                ms.put("avatar_mime", theIcon);
+                ms.put("about_me", vCard.getField("DESC"));
                 ms.put("can_see", entry.canSeeHisPresence() ? "true" : "false" );
                 ms.put("can_be_seen_by", entry.canSeeMyPresence() ? "true" : "false" );
                 List<RosterGroup>  groups = entry.getGroups();

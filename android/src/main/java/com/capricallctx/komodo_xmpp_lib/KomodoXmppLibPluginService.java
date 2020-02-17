@@ -17,6 +17,7 @@ public class KomodoXmppLibPluginService extends Service {
     public static final String READ_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.readmessage";
     public static final String SEND_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.sendmessage";
     public static final String BUNDLE_MESSAGE_BODY = "b_body";
+    public static final String BUNDLE_MESSAGE_TYPE = "b_body_type";
     public static final String BUNDLE_MESSAGE_PARAMS = "b_body_params";
     public static final String BUNDLE_TO            = "b_to";
     public static final String OUTGOING_MESSAGE     = "com.capricallctx.komodo_xmpp_lib.outgoingmessage";
