@@ -193,6 +193,33 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
   public void onMethodCall(MethodCall call, Result result) {
     Log.d(TAG, "METHOD CALL ------------------" + call.method );
     switch (call.method) {
+        case "create_group":
+            Log.d(TAG, "Create Group");
+            if( ! call.hasArgument("chatJid")){
+                result.error("MISSING", "Missing chatJid.", null);
+                return;
+            }
+            if( ! call.hasArgument("nickname")){
+                result.error("MISSING", "Missing nickname.", null);
+                return;
+            }
+            String chatJid = call.argument("chatJid").toString();
+            String nickname = call.argument("nickname").toString();
+            createChatGroup(chatJid, nickname);
+        case "join_group":
+            Log.d(TAG, "join Group");
+            if( ! call.hasArgument("chatJid")){
+                result.error("MISSING", "Missing chatJid.", null);
+                return;
+            }
+            if( ! call.hasArgument("nickname")){
+                result.error("MISSING", "Missing nickname.", null);
+                return;
+            }
+            chatJid = call.argument("chatJid").toString();
+            nickname = call.argument("nickname").toString();
+            joinChatGroup(chatJid, nickname);
+
       case "get_roster":
         Log.d(TAG, "Get roster");
         getRoster();
@@ -314,7 +341,8 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
   }
 
 
-  private void login() {
+
+    private void login() {
     if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.DISCONNECTED)) {
       Intent i = new Intent(activity, KomodoXmppLibPluginService.class);
       i.putExtra("jid_user", jid_user);
@@ -447,7 +475,40 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     }
   }
 
-  private void set_presence(int state) {
+    private void createChatGroup(String chatJid, String nickname) {
+        if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+            if (DEBUG) {
+                Log.d(TAG, "createChatGroup -> " + jid_user);
+            }
+            Intent intent = new Intent(KomodoXmppLibPluginService.CREATE_GROUP);
+            intent.putExtra(KomodoXmppLibPluginService.CREATE_GROUP_JID, chatJid);
+            intent.putExtra(KomodoXmppLibPluginService.CREATE_GROUP_NICKNAME, nickname);
+            activity.sendBroadcast(intent);
+        } else {
+            if (DEBUG) {
+                Log.d(TAG, "Not connected?");
+            }
+        }
+    }
+
+    private void joinChatGroup(String chatJid, String nickname) {
+        if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+            if (DEBUG) {
+                Log.d(TAG, "createChatGroup -> " + jid_user);
+            }
+            Intent intent = new Intent(KomodoXmppLibPluginService.JOIN_GROUP);
+            intent.putExtra(KomodoXmppLibPluginService.JOIN_GROUP_JID, chatJid);
+            intent.putExtra(KomodoXmppLibPluginService.JOIN_GROUP_AS, nickname);
+            activity.sendBroadcast(intent);
+        } else {
+            if (DEBUG) {
+                Log.d(TAG, "Not connected?");
+            }
+        }
+    }
+
+
+    private void set_presence(int state) {
 
   }
 

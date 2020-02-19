@@ -47,6 +47,13 @@ public class KomodoXmppLibPluginService extends Service {
     public static final String PRESENCE_AWAY         = "PRESENCE_AWAY";
     public static final String PRESENCE_STEALTH      = "PRESENCE_STEALTH";
     public static final String PRESENCE_OFFLINE      = "PRESENCE_OFFLINE";
+    // group chat
+    public static final String CREATE_GROUP      = "com.capricallctx.komodo_xmpp_lib.CREATE_GROUP";
+    public static final String CREATE_GROUP_JID  = "cg_jid";
+    public static final String CREATE_GROUP_NICKNAME  = "cg_nn";
+    public static final String JOIN_GROUP         = "com.capricallctx.komodo_xmpp_lib.JOIN_GROUP";
+    public static final String JOIN_GROUP_JID  = "jg_jid";
+    public static final String JOIN_GROUP_AS      = "jg_nn";
     public static KomodoConnection.ConnectionState sConnectionState;
     public static KomodoConnection.LoggedInState sLoggedInState;
     private boolean mActive;

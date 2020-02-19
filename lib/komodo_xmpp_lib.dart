@@ -135,4 +135,23 @@ class KomodoXmppLib {
   }
   return map;
 }
+
+Future<void> createGroup(String groupJID, String nickname) async {
+  var params = {
+    "chatJid": groupJID,
+    "nickname":nickname
+  };
+  String status = await _channel.invokeMethod('createChatGroup',params);
+  return status;
+}
+
+  Future<void> joinGroup(String groupJID, String nickname) async {
+    var params = {
+      "chatJid": groupJID,
+      "nickname":nickname
+    };
+    String status = await _channel.invokeMethod('joinChatGroup',params);
+    return status;
+  }
+
 }
