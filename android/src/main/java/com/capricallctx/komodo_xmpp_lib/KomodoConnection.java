@@ -28,6 +28,9 @@ import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
+import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.jivesoftware.smackx.muc.MultiUserChatException;
+import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.json.JSONException;
@@ -35,6 +38,7 @@ import org.json.JSONObject;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
@@ -656,7 +660,6 @@ public class KomodoConnection implements ConnectionListener {
     }
 
     public void getRoster(){
-
         List<HashMap> list = new ArrayList<>();
         Gson gson = new GsonBuilder().create();
         StringBuilder encoded = new StringBuilder("{[");
@@ -703,7 +706,74 @@ public class KomodoConnection implements ConnectionListener {
         intent.setPackage(mApplicationContext.getPackageName());
         intent.putExtra(KomodoXmppLibPluginService.DATA_READY, gson.toJson(list) );
         mApplicationContext.sendBroadcast(intent);
-
     }
 
+    public void createChatGroup( String chatJid, String nickname ){
+        EntityBareJid jid = null;
+        try {
+            jid = JidCreate.entityBareFrom(chatJid);
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+            return;
+        }
+        Resourcepart shroudedNickname = null;
+        try {
+            shroudedNickname = Resourcepart.from(nickname);
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+            return;
+        }
+        MultiUserChatManager manager = MultiUserChatManager.getInstanceFor(mConnection);
+        MultiUserChat muc = manager.getMultiUserChat(jid);
+        // Create the room and send an empty configuration form to make this an instant room
+        try {
+            muc.create(shroudedNickname).makeInstant();
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (MultiUserChatException.MucAlreadyJoinedException e) {
+            e.printStackTrace();
+        } catch (MultiUserChatException.MissingMucCreationAcknowledgeException e) {
+            e.printStackTrace();
+        } catch (MultiUserChatException.NotAMucServiceException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void joinChatGroup(String chatJid, String displayUserAs){
+        EntityBareJid jid = null;
+        Resourcepart nickname;
+        try {
+            jid = JidCreate.entityBareFrom(chatJid);
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+            return;
+        }
+        try {
+            nickname = Resourcepart.from(displayUserAs);
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+            return;
+        }
+        MultiUserChatManager manager = MultiUserChatManager.getInstanceFor(mConnection);
+        MultiUserChat muc2 = manager.getMultiUserChat(jid);
+        try {
+            muc2.join(nickname);
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (MultiUserChatException.NotAMucServiceException e) {
+            e.printStackTrace();
+        }
+    }
 }
