@@ -108,7 +108,12 @@ class KomodoXmppLib {
      * convert a vcard xml (as a string) to a flat map of fieldsv
      */
   Map<String, String> map = new Map<String,String>();
-  var parsed =  xml.parse(jsonString);
+    var parsed;
+    try {
+      parsed = xml.parse(jsonString);
+    }catch(e){
+      return map;
+    }
   Iterable<xml.XmlElement> i = parsed.findAllElements("iq");
   for( var element in i ){
     for( var attr in element.attributes ){

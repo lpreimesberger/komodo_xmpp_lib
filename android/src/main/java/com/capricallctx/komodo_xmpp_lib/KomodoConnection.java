@@ -178,7 +178,16 @@ public class KomodoConnection implements ConnectionListener {
 
                                      @Override
                                      public void presenceChanged(Presence presence) {
-                                         Log.d(TAG, "Presence changed");
+                                         Log.d(TAG, "Presence changed - autoaccepting");
+                                         try{
+                                             Presence presence1 = new Presence(Presence.Type.subscribed);
+                                             presence1.setTo(presence.getFrom());
+                                             mConnection.sendStanza(presence1);
+                                         }catch (SmackException.NotConnectedException e) {
+                                             e.printStackTrace();
+                                         } catch (InterruptedException e) {
+                                             e.printStackTrace();
+                                         }
                                          Log.d(TAG, presence.toString());
 
                                      }
