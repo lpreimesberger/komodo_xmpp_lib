@@ -68,7 +68,15 @@ class KomodoXmppLib {
     return status;
   }
 
+  /**
+   * send a map of strings to update - supported special fields are:
+   *  parsed["DESC"] = "tacos";
+      parsed["VOICE"] = "123-123-1234";
+      parsed["FN"] = "Test User";
+      parsed["NICKNAME"] = "Test User";
+      parsed["USERID"] = "komodo@gmail.com";
 
+   */
   Future<String> setMyVcard(map) async {
     
     var params = {

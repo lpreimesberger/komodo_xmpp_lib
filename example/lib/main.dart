@@ -49,7 +49,8 @@ class _MyAppState extends State<MyApp> {
     // read Message
     var vcard = { "nickname": "cats" };
 //    await session.setMyVcard(vcard);
-//  await session.getMyVcard();
+  var qqqq = await session.getMyVcard();
+  print(qqqq);
 //    await session.getUserVcard("caprica@sg01.komodochat.app");
     await session.getRoster();
     // life cycle, if app not active, kill stream get incoming message ..
@@ -80,6 +81,14 @@ class _MyAppState extends State<MyApp> {
     print(event);
     if( event["type"] == "my_vcard"){
       print(event["data"]);
+      var parsed = session.vcardToMap(event["data"]);
+      print(parsed);
+      parsed["DESC"] = "tacos";
+      parsed["VOICE"] = "123-123-1234";
+      parsed["FN"] = "Test User";
+      parsed["NICKNAME"] = "Test User";
+      parsed["USERID"] = "komodo@gmail.com";
+      session.setMyVcard(parsed);
     }
     else if(event["type"] == "roster") {
       print("roster test passed");
