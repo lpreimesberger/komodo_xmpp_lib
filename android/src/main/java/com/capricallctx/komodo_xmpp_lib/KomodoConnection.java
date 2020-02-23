@@ -62,6 +62,7 @@ public class KomodoConnection implements ConnectionListener {
     private Integer post;
     public String myVCard = "";
     private XMPPTCPConnection mConnection;
+    ReconnectionManager reconnectionManager;
     private BroadcastReceiver uiThreadMessageReceiver;
     private Roster roster;
 
@@ -162,6 +163,10 @@ public class KomodoConnection implements ConnectionListener {
 
         mConnection = new XMPPTCPConnection(conf.build());
         roster = Roster.getInstanceFor(mConnection);
+        reconnectionManager = ReconnectionManager.getInstanceFor(mConnection);
+        reconnectionManager.setEnabledPerDefault(true);
+        reconnectionManager.enableAutomaticReconnection();
+
         roster.addRosterListener(new RosterListener() {
                                      @Override
                                      public void entriesAdded(Collection<Jid> addresses) {
@@ -196,6 +201,7 @@ public class KomodoConnection implements ConnectionListener {
 
                                      }
                                  }
+
         );
         mConnection.addConnectionListener(this);
         try {
@@ -244,12 +250,10 @@ public class KomodoConnection implements ConnectionListener {
 
                 //Bundle up the intent and send the broadcast.
                 Intent intent = new Intent(KomodoXmppLibPluginService.RECEIVE_MESSAGE);
-                intent.setPackage(mApplicationContext.getPackageName());
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID,contactJid);
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_TYPE, message.getType().toString());
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY,message.getBody());
                 intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS,id);
-
                 mApplicationContext.sendBroadcast(intent);
                 if(KomodoXmppLibPlugin.DEBUG) {
                     Log.d(TAG, "Received message from :" + contactJid + " broadcast sent.");
@@ -301,7 +305,7 @@ public class KomodoConnection implements ConnectionListener {
                 }
             }
         });
-        ReconnectionManager reconnectionManager = ReconnectionManager.getInstanceFor(mConnection);
+        reconnectionManager = ReconnectionManager.getInstanceFor(mConnection);
         reconnectionManager.setEnabledPerDefault(true);
         reconnectionManager.enableAutomaticReconnection();
 
@@ -330,7 +334,7 @@ public class KomodoConnection implements ConnectionListener {
                         getMyVcard();
                         break;
                     case KomodoXmppLibPluginService.SET_MY_VCARD:
-                        Log.d(TAG, "Get request for vcard...");
+                        Log.d(TAG, "Get request for updating my vcard...");
                         updateMyVcard(intent.getStringExtra(KomodoXmppLibPluginService.SET_MY_VCARD_DATA));
                         break;
                     case KomodoXmppLibPluginService.GET_USER_VCARD:
@@ -381,6 +385,11 @@ public class KomodoConnection implements ConnectionListener {
                 String field = keys.next();
                 Log.d(TAG, field);
                 switch (field){
+                    case "AVATAR":
+                        if( jo.has("AVATAR"))
+                            ownVCard.setAvatar(jo.getString("AVATAR"));
+                        break;
+
                     case "NICKNAME":
                         if( jo.has("NICKNAME"))
                             ownVCard.setNickName(jo.getString("NICKNAME"));
@@ -458,8 +467,8 @@ public class KomodoConnection implements ConnectionListener {
         this.myVCard =  vCard.toXML().toString();
         // send data
         Intent intent = new Intent(KomodoXmppLibPluginService.GOT_USER_VCARD);
-        intent.setPackage(mApplicationContext.getPackageName());
-        intent.putExtra(KomodoXmppLibPluginService.GET_USER_VCARD,this.myVCard);
+        //intent.setPackage(mApplicationContext.getPackageName());
+        intent.putExtra(KomodoXmppLibPluginService.DATA_READY,this.myVCard);
         mApplicationContext.sendBroadcast(intent);
         Log.d(TAG, this.myVCard);
     }

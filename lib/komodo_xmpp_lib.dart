@@ -48,6 +48,7 @@ class KomodoXmppLib {
     return status;
   }
 
+  // retrieve my vcard in the form of a flatted map - set set for supported fields
   Future<String> getMyVcard() async {
     String status = await _channel.invokeMethod('my_vcard');
     return status;
@@ -69,13 +70,15 @@ class KomodoXmppLib {
   }
 
   /**
+   * because of the way vcards work - we only update a few fields to prevent
+   * wiping external provider data
    * send a map of strings to update - supported special fields are:
    *  parsed["DESC"] = "tacos";
       parsed["VOICE"] = "123-123-1234";
       parsed["FN"] = "Test User";
       parsed["NICKNAME"] = "Test User";
       parsed["USERID"] = "komodo@gmail.com";
-
+      AVATAR = URL or byte array
    */
   Future<String> setMyVcard(map) async {
     
