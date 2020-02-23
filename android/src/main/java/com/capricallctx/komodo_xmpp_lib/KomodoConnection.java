@@ -43,6 +43,8 @@ import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -386,8 +388,14 @@ public class KomodoConnection implements ConnectionListener {
                 Log.d(TAG, field);
                 switch (field){
                     case "AVATAR":
-                        if( jo.has("AVATAR"))
-                            ownVCard.setAvatar(jo.getString("AVATAR"));
+                        if( jo.has("AVATAR")) {
+                            try {
+                                ownVCard.setAvatar(new URL(jo.getString("AVATAR")));
+                            } catch (MalformedURLException e) {
+                                Log.d(TAG, "User has sent an invalid avatar URL");
+                                e.printStackTrace();
+                            }
+                        }
                         break;
 
                     case "NICKNAME":
