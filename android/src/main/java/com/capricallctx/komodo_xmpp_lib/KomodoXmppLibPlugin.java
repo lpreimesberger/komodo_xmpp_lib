@@ -143,6 +143,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       filter.addAction(KomodoXmppLibPluginService.GOT_MY_VCARD);
       filter.addAction(KomodoXmppLibPluginService.GOT_ROSTER);
       filter.addAction(KomodoXmppLibPluginService.DATA_READY);
+      filter.addAction(KomodoXmppLibPluginService.CREATE_GROUP);
       activity.registerReceiver(mBroadcastReceiver, filter);
     }
 
@@ -203,9 +204,14 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
                 result.error("MISSING", "Missing nickname.", null);
                 return;
             }
+          if( ! call.hasArgument("addusers")){
+            result.error("MISSING", "Missing addusers.", null);
+            return;
+          }
             String chatJid = call.argument("chatJid").toString();
             String nickname = call.argument("nickname").toString();
-            createChatGroup(chatJid, nickname);
+            String addUsersJson = call.argument("addusers").toString();
+            createChatGroup(chatJid, nickname, addUsersJson);
         case "join_group":
             Log.d(TAG, "join Group");
             if( ! call.hasArgument("chatJid")){
@@ -475,7 +481,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     }
   }
 
-    private void createChatGroup(String chatJid, String nickname) {
+    private void createChatGroup(String chatJid, String nickname, String addUsers) {
         if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
             if (DEBUG) {
                 Log.d(TAG, "createChatGroup -> " + jid_user);
@@ -483,6 +489,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
             Intent intent = new Intent(KomodoXmppLibPluginService.CREATE_GROUP);
             intent.putExtra(KomodoXmppLibPluginService.CREATE_GROUP_JID, chatJid);
             intent.putExtra(KomodoXmppLibPluginService.CREATE_GROUP_NICKNAME, nickname);
+            intent.putExtra(KomodoXmppLibPluginService.DATA_READY, addUsers);
             activity.sendBroadcast(intent);
         } else {
             if (DEBUG) {

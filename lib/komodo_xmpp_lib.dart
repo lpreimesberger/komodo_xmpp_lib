@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:xml/xml.dart' as xml;
 
+
 class KomodoXmppLib {
   static const MethodChannel _channel =
       const MethodChannel('komodo_xmpp_lib');
@@ -147,12 +148,13 @@ class KomodoXmppLib {
   return map;
 }
 
-Future<void> createGroup(String groupJID, String nickname) async {
+Future<void> createGroup(String groupJID, String nickname, List<String> addUsers) async {
   var params = {
     "chatJid": groupJID,
-    "nickname":nickname
+    "nickname":nickname,
+    "addusers": json.encode(addUsers)
   };
-  String status = await _channel.invokeMethod('createChatGroup',params);
+  String status = await _channel.invokeMethod('create_group',params);
   return status;
 }
 

@@ -18,8 +18,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   KomodoXmppLib session;
-  String recieveMessageFrom = '';
-  String recieveMessageBody = '';
+  String receiveMessageFrom = '';
+  String receiveMessageBody = '';
 
   @override
   void initState() {
@@ -49,10 +49,11 @@ class _MyAppState extends State<MyApp> {
     // read Message
     var vcard = { "nickname": "cats" };
 //    await session.setMyVcard(vcard);
-  var qqqq = await session.getMyVcard();
-  print(qqqq);
+ // var qqqq = await session.getMyVcard();
+
+  await session.createGroup("xxxx@conference.sg01.komodochat.app", "lolgroup", ["lee@sg01.komodochat.app", "komodo@sg01.komodochat.app"]);
 //    await session.getUserVcard("caprica@sg01.komodochat.app");
-    await session.getRoster();
+//    await session.getRoster();
     // life cycle, if app not active, kill stream get incoming message ..
     lifeCycle();
 
@@ -98,15 +99,15 @@ class _MyAppState extends State<MyApp> {
     }
     else if(event["type"] == "incoming") {
       setState(() {
-        recieveMessageFrom = event['from'];
-        recieveMessageBody = event['body'];
-        recieveMessageBody = event['id']; // chat ID
+        receiveMessageFrom = event['from'];
+        receiveMessageBody = event['body'];
+        receiveMessageBody = event['id']; // chat ID
       });
     } else {
       setState(() {
-        recieveMessageFrom = event['to'];
-        recieveMessageBody = event['body'];
-        recieveMessageBody = event['id']; // chat ID
+        receiveMessageFrom = event['to'];
+        receiveMessageBody = event['body'];
+        receiveMessageBody = event['id']; // chat ID
       });
     }
   }

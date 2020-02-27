@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
 
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
@@ -33,6 +34,8 @@ import org.jivesoftware.smackx.muc.MultiUserChatException;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
+import org.jivesoftware.smackx.xdata.Form;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jxmpp.jid.EntityBareJid;
@@ -52,6 +55,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import io.flutter.plugin.common.JSONUtil;
 
 public class KomodoConnection implements ConnectionListener {
     private static final String TAG ="flutter_xmpp";
@@ -335,6 +340,18 @@ public class KomodoConnection implements ConnectionListener {
                         Log.d(TAG, "Get request for vcard...");
                         getMyVcard();
                         break;
+                    case KomodoXmppLibPluginService.CREATE_GROUP:
+                        Log.d(TAG, "Get request for creating group...");
+                        try {
+                            createChatGroup(
+                                    intent.getStringExtra(KomodoXmppLibPluginService.CREATE_GROUP_JID),
+                                    intent.getStringExtra(KomodoXmppLibPluginService.CREATE_GROUP_NICKNAME),
+                                    intent.getStringExtra(KomodoXmppLibPluginService.DATA_READY)
+                            );
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        break;
                     case KomodoXmppLibPluginService.SET_MY_VCARD:
                         Log.d(TAG, "Get request for updating my vcard...");
                         updateMyVcard(intent.getStringExtra(KomodoXmppLibPluginService.SET_MY_VCARD_DATA));
@@ -371,6 +388,7 @@ public class KomodoConnection implements ConnectionListener {
         filter.addAction(KomodoXmppLibPluginService.SET_MY_VCARD);
         filter.addAction(KomodoXmppLibPluginService.GET_USER_VCARD);
         filter.addAction(KomodoXmppLibPluginService.GET_ROSTER);
+        filter.addAction(KomodoXmppLibPluginService.CREATE_GROUP);
         mApplicationContext.registerReceiver(uiThreadMessageReceiver,filter);
 
     }
@@ -726,11 +744,14 @@ public class KomodoConnection implements ConnectionListener {
         mApplicationContext.sendBroadcast(intent);
     }
 
-    public void createChatGroup( String chatJid, String nickname ){
+    public void createChatGroup( String chatJid, String nickname, String  addUsers ) throws JSONException {
+        Log.d(TAG, "CREATE CHAT GROUP" + chatJid);
+        JSONArray names = new JSONArray(addUsers);
         EntityBareJid jid = null;
         try {
             jid = JidCreate.entityBareFrom(chatJid);
         } catch (XmppStringprepException e) {
+            Log.d(TAG, "Failed to create jid");
             e.printStackTrace();
             return;
         }
@@ -738,6 +759,7 @@ public class KomodoConnection implements ConnectionListener {
         try {
             shroudedNickname = Resourcepart.from(nickname);
         } catch (XmppStringprepException e) {
+            Log.d(TAG, "Failed to create nn for group");
             e.printStackTrace();
             return;
         }
@@ -745,22 +767,49 @@ public class KomodoConnection implements ConnectionListener {
         MultiUserChat muc = manager.getMultiUserChat(jid);
         // Create the room and send an empty configuration form to make this an instant room
         try {
-            muc.create(shroudedNickname).makeInstant();
+            muc.create(shroudedNickname); // .makeInstant();
+            Form form = muc.getConfigurationForm().createAnswerForm();
+            form.setAnswer("muc#roomconfig_roomowners", "caprica@sg01.komodochat.app");
+            muc.sendConfigurationForm(form);
         } catch (SmackException.NoResponseException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         } catch (XMPPException.XMPPErrorException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         } catch (SmackException.NotConnectedException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         } catch (InterruptedException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         } catch (MultiUserChatException.MucAlreadyJoinedException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         } catch (MultiUserChatException.MissingMucCreationAcknowledgeException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         } catch (MultiUserChatException.NotAMucServiceException e) {
+            Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
         }
+        Log.d(TAG, "ADDING USERS TO LIST");
+        for( int i = 0; i < names.length(); i++){
+            Log.d(TAG, "Inviting -->" + names.get(i).toString());
+            try {
+                jid = JidCreate.entityBareFrom(names.get(i).toString());
+            } catch (XmppStringprepException e) {
+                e.printStackTrace();
+            }
+            try {
+                muc.invite(jid, "Join my group!");
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        Log.d(TAG, "Completed operation of creating the group :)");
     }
 
     public void joinChatGroup(String chatJid, String displayUserAs){
