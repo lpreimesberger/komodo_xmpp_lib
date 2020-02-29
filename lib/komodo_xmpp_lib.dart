@@ -163,6 +163,8 @@ Future<void> createGroup(String groupJID, String nickname, List<String> addUsers
     "nickname":nickname,
     "addusers": json.encode(addUsers)
   };
+  print(params);
+  print(params["addUsers"]);
   String status = await _channel.invokeMethod('create_group',params);
   return status;
 }

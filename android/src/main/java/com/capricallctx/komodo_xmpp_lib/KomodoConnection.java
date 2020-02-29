@@ -35,6 +35,7 @@ import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.jivesoftware.smackx.xdata.Form;
+import org.jivesoftware.smackx.xdata.FormField;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -802,7 +803,19 @@ public class KomodoConnection implements ConnectionListener {
         try {
             muc.create(shroudedNickname); // .makeInstant();
             Form form = muc.getConfigurationForm().createAnswerForm();
-            form.setAnswer("muc#roomconfig_roomowners", "caprica@sg01.komodochat.app");
+            for (Iterator fields = form.getFields().iterator(); fields.hasNext();) {
+                FormField field = (FormField) fields.next();
+                if (!FormField.Type.hidden.equals(field.getType())
+                        && field.getVariable() != null) {
+                    form.setDefaultAnswer(field.getVariable());
+                }
+            }
+            form.setAnswer("muc#roomconfig_roomdesc", nickname);
+            form.setAnswer("muc#roomconfig_publicroom", false); //
+            form.setAnswer("muc#roomconfig_persistentroom", true);
+            form.setAnswer("muc#roomconfig_membersonly", false);
+            form.setAnswer("muc#roomconfig_allowinvites", true);
+            form.setAnswer("muc#roomconfig_enablelogging", true);
             muc.sendConfigurationForm(form);
         } catch (SmackException.NoResponseException e) {
             Log.d(TAG, "Failed to create snn");
