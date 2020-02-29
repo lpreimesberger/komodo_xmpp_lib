@@ -60,6 +60,15 @@ class KomodoXmppLib {
     return status;
   }
 
+  Future<String> setRoster( jid, nickname) async {
+    var params = {
+      "jid": jid,
+      "nickname": nickname,
+    };
+    String status = await _channel.invokeMethod('set_roster', params);
+    return status;
+  }
+
 
   Future<String> getUserVcard(user) async {
     var params = {

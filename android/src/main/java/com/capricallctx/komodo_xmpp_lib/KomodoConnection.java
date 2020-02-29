@@ -38,6 +38,7 @@ import org.jivesoftware.smackx.xdata.Form;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -210,6 +211,8 @@ public class KomodoConnection implements ConnectionListener {
                                  }
 
         );
+        // accept everyone (default)
+        roster.setSubscriptionMode(Roster.SubscriptionMode.accept_all);
         mConnection.addConnectionListener(this);
         try {
             if(KomodoXmppLibPlugin.DEBUG) {
@@ -336,6 +339,13 @@ public class KomodoConnection implements ConnectionListener {
                         Log.d(TAG, "Get request for roster...");
                         getRoster();
                         break;
+                    case KomodoXmppLibPluginService.SET_ROSTER:
+                        Log.d(TAG, "Set request for roster...");
+                        addToRoster(
+                                intent.getStringExtra(KomodoXmppLibPluginService.JID),
+                                intent.getStringExtra(KomodoXmppLibPluginService.NICKNAME)
+                                );
+                        break;
                     case KomodoXmppLibPluginService.GET_MY_VCARD:
                         Log.d(TAG, "Get request for vcard...");
                         getMyVcard();
@@ -388,6 +398,7 @@ public class KomodoConnection implements ConnectionListener {
         filter.addAction(KomodoXmppLibPluginService.SET_MY_VCARD);
         filter.addAction(KomodoXmppLibPluginService.GET_USER_VCARD);
         filter.addAction(KomodoXmppLibPluginService.GET_ROSTER);
+        filter.addAction(KomodoXmppLibPluginService.SET_ROSTER);
         filter.addAction(KomodoXmppLibPluginService.CREATE_GROUP);
         mApplicationContext.registerReceiver(uiThreadMessageReceiver,filter);
 
@@ -693,6 +704,28 @@ public class KomodoConnection implements ConnectionListener {
             e.printStackTrace();
         }
 
+    }
+
+    public void addToRoster(String jidText, String nickname){
+        EntityBareJid jid = null;
+        try {
+            jid = JidCreate.entityBareFrom(jidText);
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+        }
+        try {
+            roster.createEntry(jid, nickname, null);
+        } catch (SmackException.NotLoggedInException e) {
+            e.printStackTrace();
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void getRoster(){

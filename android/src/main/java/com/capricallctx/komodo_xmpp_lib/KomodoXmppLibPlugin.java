@@ -225,6 +225,13 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
             chatJid = call.argument("chatJid").toString();
             nickname = call.argument("nickname").toString();
             joinChatGroup(chatJid, nickname);
+      case "set_roster":
+        Log.d(TAG, "Set roster");
+        chatJid = call.argument("jid").toString();
+        nickname = call.argument("nickname").toString();
+        setRoster(chatJid, nickname);
+        result.success("SUCCESS");
+        break;
 
       case "get_roster":
         Log.d(TAG, "Get roster");
@@ -416,6 +423,21 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       }
     }
   }
+
+  private void setRoster(String jid, String nickname) {
+    if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
+      Log.d(TAG, "setRoster -> " );
+      Intent intent = new Intent(KomodoXmppLibPluginService.SET_ROSTER);
+      intent.putExtra(KomodoXmppLibPluginService.JID, jid);
+      intent.putExtra(KomodoXmppLibPluginService.NICKNAME, nickname);
+      activity.sendBroadcast(intent);
+    } else {
+      if (DEBUG) {
+        Log.d(TAG, "Not connected?");
+      }
+    }
+  }
+
 
 
   private void get_my_vard() {

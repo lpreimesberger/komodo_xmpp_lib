@@ -37,6 +37,9 @@ public class KomodoXmppLibPluginService extends Service {
     public static final String GOT_MY_VCARD       = "com.capricallctx.komodo_xmpp_lib.GOT_MY_VCARD";
     public static final String GET_ROSTER         = "com.capricallctx.komodo_xmpp_lib.GET_ROSTER";
     public static final String GOT_ROSTER       = "com.capricallctx.komodo_xmpp_lib.GOT_ROSTER";
+    public static final String SET_ROSTER         = "com.capricallctx.komodo_xmpp_lib.SET_ROSTER";
+    public static final String JID   = "_jid";
+    public static final String NICKNAME   = "_nickname";
     // data back messages
     public static final String DATA_READY       = "com.capricallctx.komodo_xmpp_lib.DATA_READY";
     // presence
