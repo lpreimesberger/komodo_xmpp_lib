@@ -91,7 +91,7 @@ class KomodoXmppLib {
       AVATAR = URL or byte array
    */
   Future<String> setMyVcard(map) async {
-    
+
     var params = {
       "data": jsonEncode(map),
     };
@@ -174,7 +174,7 @@ Future<void> createGroup(String groupJID, String nickname, List<String> addUsers
       "chatJid": groupJID,
       "nickname":nickname
     };
-    String status = await _channel.invokeMethod('joinChatGroup',params);
+    String status = await _channel.invokeMethod('join_group',params);
     return status;
   }
 

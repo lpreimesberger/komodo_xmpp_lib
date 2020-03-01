@@ -11,27 +11,39 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 
 import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaCollector;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener;
 import org.jivesoftware.smack.chat2.OutgoingChatMessageListener;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.FromMatchesFilter;
+import org.jivesoftware.smack.filter.PacketExtensionFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterGroup;
 import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatException;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
+import org.jivesoftware.smackx.muc.packet.MUCUser;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.jivesoftware.smackx.xdata.Form;
@@ -50,6 +62,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -229,6 +242,24 @@ public class KomodoConnection implements ConnectionListener {
             e.printStackTrace();
         }
         setupUiThreadBroadCastMessageReceiver();
+        PacketExtensionFilter invitationFilter = new PacketExtensionFilter("x", "http://jabber.org/protocol/muc#user");
+        PacketListener invitationPacketListener = new PacketListener() {
+            @Override
+            public void processStanza(Stanza packet) throws SmackException.NotConnectedException, InterruptedException, SmackException.NotLoggedInException {
+                    Log.d(TAG, "GOT MUC PACKET");
+            }
+        };
+        mConnection.addPacketListener(invitationPacketListener, invitationFilter);
+        StanzaFilter filter = new AndFilter(StanzaTypeFilter.MESSAGE);
+        StanzaCollector myCollector = mConnection.createStanzaCollector(filter);
+        StanzaListener myListener = new StanzaListener() {
+		public void processStanza(Stanza stanza) {
+                // Do something with the incoming stanza here._
+                Log.d(TAG, stanza.toString());
+            }
+        };
+        mConnection.addAsyncStanzaListener(myListener, filter);
+
         ChatManager.getInstanceFor(mConnection).addIncomingListener(new IncomingChatMessageListener() {
             @Override
             public void newIncomingMessage(EntityBareJid messageFrom, Message message, Chat chat) {
@@ -363,6 +394,13 @@ public class KomodoConnection implements ConnectionListener {
                             e.printStackTrace();
                         }
                         break;
+                    case KomodoXmppLibPluginService.JOIN_GROUP:
+                        Log.d(TAG, "Get request for creating group...");
+                        joinChatGroup(
+                            intent.getStringExtra(KomodoXmppLibPluginService.JOIN_GROUP_JID),
+                            intent.getStringExtra(KomodoXmppLibPluginService.JOIN_GROUP_AS)
+                        );
+                        break;
                     case KomodoXmppLibPluginService.SET_MY_VCARD:
                         Log.d(TAG, "Get request for updating my vcard...");
                         updateMyVcard(intent.getStringExtra(KomodoXmppLibPluginService.SET_MY_VCARD_DATA));
@@ -384,6 +422,7 @@ public class KomodoConnection implements ConnectionListener {
                         break;
                     case KomodoXmppLibPluginService.GROUP_SEND_MESSAGE:
                         //Send group message.
+                        Log.d(TAG, "Group send in worker received");
                         sendGroupMessage(intent.getStringExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_BODY),
                                 intent.getStringExtra(KomodoXmppLibPluginService.GROUP_TO),
                                 intent.getStringExtra(KomodoXmppLibPluginService.GROUP_MESSAGE_PARAMS));
@@ -401,9 +440,13 @@ public class KomodoConnection implements ConnectionListener {
         filter.addAction(KomodoXmppLibPluginService.GET_ROSTER);
         filter.addAction(KomodoXmppLibPluginService.SET_ROSTER);
         filter.addAction(KomodoXmppLibPluginService.CREATE_GROUP);
+        filter.addAction(KomodoXmppLibPluginService.JOIN_GROUP);
+        filter.addAction(KomodoXmppLibPluginService.GROUP_SEND_MESSAGE);
         mApplicationContext.registerReceiver(uiThreadMessageReceiver,filter);
 
     }
+
+
 
     private void updateMyVcard(String mapString){
         try {
@@ -541,23 +584,22 @@ public class KomodoConnection implements ConnectionListener {
     {
         Log.d(TAG,"Sending group message to :"+ toRoom);
         EntityBareJid jid = null;
-        ChatManager chatManager = ChatManager.getInstanceFor(mConnection);
-
-//         try {
-//             MultiUserChat muc = chatManager.("test2@conference.cca");
-//
-//             Message message = new Message(toRoom, Message.Type.groupchat());
-//            message.setBody(body);
-//            message.addBody("id", id);
-//            message.setType(Message.Type.groupchat);
-//            message.setTo(toRoom);
-//            MultiUserChat.se(message);
-//
-//        } catch (SmackException.NotConnectedException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            jid = JidCreate.entityBareFrom(toRoom);
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+        }
+        MultiUserChatManager chatManager = MultiUserChatManager.getInstanceFor(mConnection);
+        MultiUserChat multiUserChat = chatManager.getMultiUserChat(jid);
+        Message message = new Message(jid, Message.Type.groupchat);
+        message.setBody(body);
+        try {
+            multiUserChat.sendMessage(message);
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -803,20 +845,26 @@ public class KomodoConnection implements ConnectionListener {
         try {
             muc.create(shroudedNickname); // .makeInstant();
             Form form = muc.getConfigurationForm().createAnswerForm();
-            for (Iterator fields = form.getFields().iterator(); fields.hasNext();) {
+            for (Iterator fields = form.getFields().iterator(); fields.hasNext(); ) {
                 FormField field = (FormField) fields.next();
                 if (!FormField.Type.hidden.equals(field.getType())
                         && field.getVariable() != null) {
                     form.setDefaultAnswer(field.getVariable());
                 }
             }
+            /*
             form.setAnswer("muc#roomconfig_roomdesc", nickname);
             form.setAnswer("muc#roomconfig_publicroom", false); //
             form.setAnswer("muc#roomconfig_persistentroom", true);
             form.setAnswer("muc#roomconfig_membersonly", false);
             form.setAnswer("muc#roomconfig_allowinvites", true);
             form.setAnswer("muc#roomconfig_enablelogging", true);
+
+             */
             muc.sendConfigurationForm(form);
+        } catch( java.lang.IllegalArgumentException e){
+                Log.d("TAG", "field exception?");
+                e.printStackTrace();
         } catch (SmackException.NoResponseException e) {
             Log.d(TAG, "Failed to create snn");
             e.printStackTrace();
@@ -877,6 +925,55 @@ public class KomodoConnection implements ConnectionListener {
         MultiUserChat muc2 = manager.getMultiUserChat(jid);
         try {
             muc2.join(nickname);
+            muc2.addMessageListener(new MessageListener() {
+                @Override
+                public void processMessage(Message message) {
+                    if( message.getBody() == null){
+                        Log.d(TAG, "Ignoring jump message (no body)");
+                    }
+                    Jid messageFrom = message.getFrom();
+
+                    if(KomodoXmppLibPlugin.DEBUG) {
+                        Log.d(TAG, message.getType().toString());
+                        Log.d(TAG, "INCOMING GROUP MESSAGE :" + message.toString());
+                        Log.d(TAG, "message.getBody() :" + message.getBody());
+                        Log.d(TAG, "message.getFrom() :" + message.getFrom());
+                    }
+                    DelayInformation inf = null;
+                    inf = (DelayInformation)message.getExtension(DelayInformation.ELEMENT,DelayInformation.NAMESPACE);
+                    if (inf != null){
+                        Date date = inf.getStamp();
+                        Log.d(TAG,"date: "+date);
+                    }
+
+                    String from = message.getFrom().toString();
+                    String contactJid="";
+                    if (from.contains("/")){
+                        contactJid = from.split("/")[0];
+                        if(KomodoXmppLibPlugin.DEBUG) {
+                            Log.d(TAG, "The real jid is :" + contactJid);
+                            Log.d(TAG, "The message is from :" + from);
+                        }
+                    }else {
+                        contactJid = from;
+                    }
+
+                    String id = message.getBody("id");
+
+                    //Bundle up the intent and send the broadcast.
+                    Intent intent = new Intent(KomodoXmppLibPluginService.RECEIVE_MESSAGE);
+                    intent.putExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID,contactJid);
+                    intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_TYPE, message.getType().toString());
+                    intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY, message.getBody());
+                    intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS,id);
+                    mApplicationContext.sendBroadcast(intent);
+                    if(KomodoXmppLibPlugin.DEBUG) {
+                        Log.d(TAG, "Received MUC from :" + contactJid + " broadcast sent.");
+                    }
+                    ///ADDED
+
+                }
+            });
         } catch (SmackException.NoResponseException e) {
             e.printStackTrace();
         } catch (XMPPException.XMPPErrorException e) {

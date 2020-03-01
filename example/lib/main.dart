@@ -45,13 +45,14 @@ class _MyAppState extends State<MyApp> {
     sleep(const Duration(seconds:2)); // just sample wait for get current state
     print(await session.currentState()); // get current state
     // sending Message
-//    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
+    await session.sendMessage("lee@sg01.komodochat.app","test","random_id_for_sync_with_sqlite");
     // read Message
     var vcard = { "nickname": "cats" };
 //    await session.setMyVcard(vcard);
  // var qqqq = await session.getMyVcard();
-
-  await session.createGroup("xxxx@conference.sg01.komodochat.app", "lolgroup", ["lee@sg01.komodochat.app", "komodo@sg01.komodochat.app"]);
+    await session.joinGroup("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "test app");
+    await session.sendGroupMessage("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "blah blah", "123123123123");
+//  await session.createGroup("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "lolgroup", ["lee@sg01.komodochat.app", "komodo@sg01.komodochat.app","GzaisxvK2PeGpL3sGHMmz954DBk2@sg01.komodochat.app"]);
 //    await session.getUserVcard("caprica@sg01.komodochat.app");
 //    await session.getRoster();
     // life cycle, if app not active, kill stream get incoming message ..

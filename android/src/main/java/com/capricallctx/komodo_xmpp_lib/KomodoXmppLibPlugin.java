@@ -144,6 +144,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       filter.addAction(KomodoXmppLibPluginService.GOT_ROSTER);
       filter.addAction(KomodoXmppLibPluginService.DATA_READY);
       filter.addAction(KomodoXmppLibPluginService.CREATE_GROUP);
+        filter.addAction(KomodoXmppLibPluginService.JOIN_GROUP);
       activity.registerReceiver(mBroadcastReceiver, filter);
     }
 
@@ -212,6 +213,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
             String nickname = call.argument("nickname").toString();
             String addUsersJson = call.argument("addusers").toString();
             createChatGroup(chatJid, nickname, addUsersJson);
+          break;
         case "join_group":
             Log.d(TAG, "join Group");
             if( ! call.hasArgument("chatJid")){
@@ -225,6 +227,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
             chatJid = call.argument("chatJid").toString();
             nickname = call.argument("nickname").toString();
             joinChatGroup(chatJid, nickname);
+            break;
       case "set_roster":
         Log.d(TAG, "Set roster");
         chatJid = call.argument("jid").toString();
@@ -523,7 +526,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
     private void joinChatGroup(String chatJid, String nickname) {
         if (KomodoXmppLibPluginService.getState().equals(KomodoConnection.ConnectionState.CONNECTED)) {
             if (DEBUG) {
-                Log.d(TAG, "createChatGroup -> " + jid_user);
+                Log.d(TAG, "sending join group to komodoconnection -> " + jid_user);
             }
             Intent intent = new Intent(KomodoXmppLibPluginService.JOIN_GROUP);
             intent.putExtra(KomodoXmppLibPluginService.JOIN_GROUP_JID, chatJid);
