@@ -14,6 +14,7 @@ import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.ReconnectionManager;
+import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaCollector;
 import org.jivesoftware.smack.StanzaListener;
@@ -40,6 +41,7 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
+import org.jivesoftware.smackx.muc.DiscussionHistory;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatException;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
@@ -923,8 +925,10 @@ public class KomodoConnection implements ConnectionListener {
         }
         MultiUserChatManager manager = MultiUserChatManager.getInstanceFor(mConnection);
         MultiUserChat muc2 = manager.getMultiUserChat(jid);
+        DiscussionHistory history = new DiscussionHistory();
+        history.setMaxStanzas(0);
         try {
-            muc2.join(nickname);
+            muc2.join(nickname, null, history, SmackConfiguration.getDefaultPacketReplyTimeout());
             muc2.addMessageListener(new MessageListener() {
                 @Override
                 public void processMessage(Message message) {
@@ -947,6 +951,8 @@ public class KomodoConnection implements ConnectionListener {
                     }
 
                     String from = message.getFrom().toString();
+                    /*
+                    // this is stripping the nickname from the messsage - annoying
                     String contactJid="";
                     if (from.contains("/")){
                         contactJid = from.split("/")[0];
@@ -957,18 +963,18 @@ public class KomodoConnection implements ConnectionListener {
                     }else {
                         contactJid = from;
                     }
-
+*/
                     String id = message.getBody("id");
 
                     //Bundle up the intent and send the broadcast.
                     Intent intent = new Intent(KomodoXmppLibPluginService.RECEIVE_MESSAGE);
-                    intent.putExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID,contactJid);
+                    intent.putExtra(KomodoXmppLibPluginService.BUNDLE_FROM_JID,from);
                     intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_TYPE, message.getType().toString());
                     intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_BODY, message.getBody());
                     intent.putExtra(KomodoXmppLibPluginService.BUNDLE_MESSAGE_PARAMS,id);
                     mApplicationContext.sendBroadcast(intent);
                     if(KomodoXmppLibPlugin.DEBUG) {
-                        Log.d(TAG, "Received MUC from :" + contactJid + " broadcast sent.");
+                        Log.d(TAG, "Received MUC from :" + from + " broadcast sent.");
                     }
                     ///ADDED
 
