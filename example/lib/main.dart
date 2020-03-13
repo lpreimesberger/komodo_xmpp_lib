@@ -49,9 +49,9 @@ class _MyAppState extends State<MyApp> {
     // read Message
     var vcard = { "nickname": "cats" };
 //    await session.setMyVcard(vcard);
- // var qqqq = await session.getMyVcard();
-    await session.joinGroup("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "test app");
-    await session.sendGroupMessage("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "blah blah", "123123123123");
+  var qqqq = await session.getMyVcard();
+ //   await session.joinGroup("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "test app");
+    //await session.sendGroupMessage("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "blah blah", "123123123123");
 //  await session.createGroup("GzaisxvK2PeGpL3sGHMmz954DBk2_1583006187765@conference.sg01.komodochat.app", "lolgroup", ["lee@sg01.komodochat.app", "komodo@sg01.komodochat.app","GzaisxvK2PeGpL3sGHMmz954DBk2@sg01.komodochat.app"]);
 //    await session.getUserVcard("caprica@sg01.komodochat.app");
 //    await session.getRoster();
@@ -89,6 +89,7 @@ class _MyAppState extends State<MyApp> {
       parsed["VOICE"] = "123-123-1234";
       parsed["FN"] = "Test User";
       parsed["NICKNAME"] = "Test User";
+      parsed["AVATAR"] = "https://firebasestorage.googleapis.com/v0/b/komodo-chat-33f8f.appspot.com/o/1583618657252?alt=media&token=59f622d5-7094-4d88-ae53-a48df781e222";
       parsed["USERID"] = "komodo@gmail.com";
       session.setMyVcard(parsed);
     }

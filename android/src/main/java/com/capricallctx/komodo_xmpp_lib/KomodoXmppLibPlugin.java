@@ -410,7 +410,7 @@ public class KomodoXmppLibPlugin extends FlutterActivity implements MethodCallHa
       activity.sendBroadcast(intent);
     } else {
       if (DEBUG) {
-        Log.d(TAG, "Not connected?");
+        Log.d(TAG, "Not connected? - this shouldn't happen :(");
       }
     }
   }

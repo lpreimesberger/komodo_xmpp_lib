@@ -460,14 +460,15 @@ public class KomodoConnection implements ConnectionListener {
             Iterator<String> keys = jo.keys();
             while( keys.hasNext()){
                 String field = keys.next();
-                Log.d(TAG, field);
+                Log.d(TAG, "Processing vcard -> " + field);
                 switch (field){
                     case "AVATAR":
                         if( jo.has("AVATAR")) {
                             try {
+                                Log.d(TAG, "Attempting to set avatar");
                                 ownVCard.setAvatar(new URL(jo.getString("AVATAR")));
                             } catch (MalformedURLException e) {
-                                Log.d(TAG, "User has sent an invalid avatar URL");
+                                Log.d(TAG, "User has sent an invalid avatar URL?");
                                 e.printStackTrace();
                             }
                         }

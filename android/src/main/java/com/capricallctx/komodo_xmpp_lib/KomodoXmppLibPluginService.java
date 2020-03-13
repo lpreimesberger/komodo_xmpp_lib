@@ -181,6 +181,7 @@ public class KomodoXmppLibPluginService extends Service {
             Log.d(TAG, "onDestroy()");
         }
         super.onDestroy();
-        stop();
+        // not stopping the library - it's capable of reconnecting from the java code base
+//        stop();
     }
 }
